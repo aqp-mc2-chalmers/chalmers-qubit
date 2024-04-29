@@ -1,4 +1,14 @@
 site_name: Chalmers Qubit Simulator
+
+nav:
+- Introduction:
+  - Overview: index.md
+- Theory:
+  - Transmon qubits: transmons.md
+  - Single qubit gates: single_qubit_gates.md
+  - Multi qubit gates: multi_qubit_gates.md
+- API Documentation: reference.md
+
 theme:
   name: material
   language: en 
@@ -29,9 +39,37 @@ theme:
     - search.suggest
     - search.highlight
     - content.tabs.link
+    - navigation.footer
+    - navigation.indexes
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - toc.follow
 
 plugins:
   - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          options:
+            docstring_style: numpy
+            filters: ["!^_"]
+            heading_level: 2
+            inherited_members: true
+            merge_init_into_class: true
+            preload_modules: [mkdocstrings]
+            separate_signature: true
+            show_root_heading: true
+            show_root_full_path: false
+            show_signature_annotations: true
+            show_source: false
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            signature_crossrefs: true
+            summary: true
+            unwrap_annotated: true
   - bibtex:
       bib_file: "docs/bibliography/references.bib"
 
@@ -49,8 +87,16 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+  # Add option to align images and add captions
+  - attr_list
+  - md_in_html
 
 copyright: Copyright &copy; 2024
+
+extra:
+  social:
+  - icon: fontawesome/brands/github
+    link: https://github.com/aqp-mc2-chalmers/chalmers-qubit
 
 extra_javascript:
   - javascripts/mathjax.js
