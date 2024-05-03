@@ -1,6 +1,6 @@
 # Introduction
 
-Welcome to the Chalmers Qubit simulator package! A simulation framework for Chalmers devices that can be used to simulate the running of quantum algorithms with realistic noise. We follow [qutip-qip](https://qutip-qip.readthedocs.io/en/stable/) to build a processor that can take in a quantum circuit (e.g., OpenQASM 2.0) and performs a master equation simulation adding noise such as T1 and T2. It is also possible to perform a Monte-Carlo trajectory simulation and customize the processor to add various types of noise such as [ZZCrossTalk](reference/#chalmers_qubit.sarimner.noise.ZZCrossTalk).
+Welcome to the Chalmers Qubit simulator package! A simulation framework for Chalmers devices that can be used to simulate the running of quantum algorithms with realistic noise. We follow [qutip-qip](https://qutip-qip.readthedocs.io/en/stable/) to build a processor that can take in a quantum circuit (e.g., OpenQASM 2.0) and performs a master equation simulation adding noise such as T1 and T2. It is also possible to perform a Monte-Carlo trajectory simulation and customize the processor to add various types of noise such as [ZZCrossTalk](reference.md#chalmers_qubit.sarimner.noise.ZZCrossTalk).
 
 The package is under development and testing. 
 
