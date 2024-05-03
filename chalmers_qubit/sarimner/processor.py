@@ -1,6 +1,8 @@
 from typing import Optional
-from qutip import propagator
-from qutip_qip.noise import Noise
+
+import qutip
+from qutip import propagator, Qobj, QobjEvo
+from qutip_qip.circuit import QubitCircuit
 from qutip_qip.device import Processor, Model
 from qutip_qip.compiler import GateCompiler
 
@@ -27,10 +29,10 @@ class SarimnerProcessor(Processor):
         The model of the quantum processor, storing physical properties.
     _default_compiler : GateCompiler
         Holds the compiler instance being used, either the provided one or a default SarimnerCompiler.
-    native_gates : NoneType
+    native_gates : None
         Initially set to None, to be configured with the gate set natively supported by the processor.
-    pulse_mode : str
-        Mode of pulse operation, set to 'discrete' by default, indicating how pulses are treated in the processor.
+    spline_kind: str
+        Type of the coefficient interpolation.
     global_phase : float
         The global phase of the quantum state managed by the processor, initialized to 0.
     """
@@ -53,25 +55,10 @@ class SarimnerProcessor(Processor):
 
         super(SarimnerProcessor, self).__init__(model=self.model)
         self.native_gates = None
-        self.pulse_mode = "continuous"
         self.spline_kind = "cubic"
         self.global_phase = 0
 
-    def add_noise(self, noise):
-        """
-        Add a noise object to the processor.
-
-        Parameters
-        ----------
-        noise : :class:`.Noise`
-            The noise object defined outside the processor.
-        """
-        if isinstance(noise, Noise):
-            self.model._add_noise(noise)
-        else:
-            raise TypeError("Input is not a Noise object.")
-
-    def load_circuit(self, qc, schedule_mode="ASAP", compiler=None):
+    def load_circuit(self, qc:QubitCircuit, schedule_mode:str="ASAP", compiler:Optional[GateCompiler]=None):
         """
         The default routine of compilation.
         It first calls the :meth:`.transpile` to convert the circuit to
@@ -126,42 +113,57 @@ class SarimnerProcessor(Processor):
             self.load_circuit(qc)
         return super().run_state(init_state,analytical,states,noisy,solver,**kwargs)
 
-    def run_propagator(self, qc=None, noisy=False, **kwargs):
+    def run_propagator(self, qc:Optional[QubitCircuit]=None, noisy:bool=False, **kwargs):
         """
-        NOT WORKING AFTER QUTIP UPDATE TO 5.0
         Parameters
         ----------
         qc: :class:`qutip.qip.QubitCircuit`, optional
             A quantum circuit. If given, it first calls the ``load_circuit``
             and then calculate the evolution.
-        states: :class:`qutip.Qobj`, optional
-         Old API, same as init_state.
+        noisy: bool, optional
+            If noise are included. Default is False.
         **kwargs
            Keyword arguments for the qutip solver.
         Returns
         -------
-        evo_result: :class:`qutip.Result`
-            If ``analytical`` is False,  an instance of the class
-            :class:`qutip.Result` will be returned.
-            If ``analytical`` is True, a list of matrices representation
-            is returned.
+        prop: list of Qobj or Qobj
+            Returns the propagator(s) calculated at times t.
         """
         if qc is not None:
             self.load_circuit(qc)
-        # construct qobjevo for unitary evolution
-        noisy_qobjevo, c_ops = self.get_qobjevo(noisy=noisy)
 
-        # time steps
-        tlist = self.get_full_tlist()
-        H = noisy_qobjevo.to_list()
+        # construct qobjevo
+        noisy_qobjevo, sys_c_ops = self.get_qobjevo(noisy=noisy)
+        drift_qobjevo = self._get_drift_obj().get_ideal_qobjevo(self.dims)
+        H = QobjEvo.__add__(noisy_qobjevo, drift_qobjevo)
 
-        # Compute drift Hamiltonians
-        H_drift = 0
-        drift = self._get_drift_obj()
-        for drift_ham in drift.drift_hamiltonians:
-            H_drift += drift_ham.get_qobj(self.dims)
-        H[0] = H_drift
+        # add collpase operators into kwargs
+        if "c_ops" in kwargs:
+            if isinstance(kwargs["c_ops"], (Qobj, QobjEvo)):
+                kwargs["c_ops"] += [kwargs["c_ops"]] + sys_c_ops
+            else:
+                kwargs["c_ops"] += sys_c_ops
+        else:
+            kwargs["c_ops"] = sys_c_ops
+
+        # set time
+        if "t" in kwargs:
+            t = kwargs["t"]
+            del kwargs["t"]
+        else:
+            tlist = self.get_full_tlist()
+            if tlist is None:
+                raise ValueError("tlist is None.")
+            else: 
+                t = tlist[-1]
+
+        options = kwargs.get("options", qutip.Options())
+        if options.get("max_step", 0.0) == 0.0:
+            options["max_step"] = self._get_max_step()
+        options["progress_bar"] = False
+        kwargs["options"] = options
 
         # compute the propagator
-        evo_result = propagator(H=H, t=tlist, c_ops=c_ops, **kwargs)
-        return evo_result
+        prop = propagator(H=H, t=t, **kwargs)
+
+        return prop

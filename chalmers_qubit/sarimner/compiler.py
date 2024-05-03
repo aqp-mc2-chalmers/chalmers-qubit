@@ -126,11 +126,11 @@ class SarimnerCompiler(GateCompiler):
 
         # Gate time in ns
         t_total = 50
-        # Full width half maximum of gaussian 
+        # Full width half maximum of gaussian
         fwhm = int(2.354 * sigma)
         # Number of samples
         n_steps = 3 * (omega_drive * t_total) / (2*np.pi) + fwhm
-        
+
         tlist = np.linspace(0, t_total, int(n_steps))
 
         # arguments
@@ -170,6 +170,7 @@ class SarimnerCompiler(GateCompiler):
 
         """
         q = gate.targets[0]  # target qubit
+        # This corresponds to clockwise rotation of the Bloch-sphere around the Z-axis.
         self.phase[q] -= gate.arg_value
 
     def ry_compiler(self, gate, args):
@@ -367,8 +368,8 @@ class SarimnerCompiler(GateCompiler):
 
         # Time of gate
         t_total = np.sqrt(2) * np.pi / coupling_strength
-        # sampling frequency should be at least two times the signal frequency
-        # (Here we have choosen 3 times, but we could play around with this value)
+        # sampling frequency should be at least two times the maximum signal frequency
+        # (Here we have choosen 2.1 times, but we could play around with this value)
         f_s = 2.1 * (omega_d + abs(detuning)) / (2*np.pi)
         n_steps = int(t_total * f_s)
         tlist = np.linspace(0, t_total, n_steps)
@@ -435,6 +436,8 @@ class SarimnerCompiler(GateCompiler):
 
         fs_1 = omega1_drive + abs(detuning1)
         fs_2 = omega2_drive + abs(detuning2)
+        # sampling frequency should be at least two times the maximum signal frequency
+        # (Here we have choosen 2.1 times, but we could play around with this value)
         fs = 2.1 * max([fs_1, fs_2]) / (2 * np.pi)
 
         # We do simultaneous drive

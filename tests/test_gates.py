@@ -1,7 +1,8 @@
 import unittest
 import numpy as np
-from qutip import basis, tensor, fidelity
+from qutip import basis, tensor, fidelity, average_gate_fidelity
 from qutip_qip.circuit import QubitCircuit
+from qutip_qip.operations import rz
 from chalmers_qubit.sarimner import SarimnerModel, SarimnerProcessor
 from chalmers_qubit.base.operations import project_on_qubit
 from chalmers_qubit.base.gates import cczs
@@ -34,25 +35,28 @@ class TestSingleQubitGates(unittest.TestCase):
 
     def test_rx_gate(self):
         qc = QubitCircuit(self.num_qubits)
-        qc.add_gate("RX", targets=0, arg_value=np.pi)
+        qc.add_gate("RX", targets=0, arg_value=np.pi/2)
+        # Compute the ideal propagator
+        U = qc.compute_unitary()
         # Compute the propagator
-        result = self.processor.run_state(basis(3,0), qc=qc)
-        final_state = project_on_qubit(result.states[-1])
+        prop = self.processor.run_propagator(qc=qc)
+        final_prop = project_on_qubit(prop)
         # Compute the average gate fidelity
-        f = fidelity(basis(2,1), final_state)
-        # We want 99.99% Average gate fidelity
+        f = average_gate_fidelity(U, final_prop)
+        # We want 99.99% Average Gate Fidelity
         self.assertAlmostEqual(1, f, places=4, msg="Precision of RX-gate failed.")
 
     def test_ry_gate(self):
         qc = QubitCircuit(self.num_qubits)
-        qc.add_gate("RY", targets=0, arg_value=np.pi)
+        qc.add_gate("RY", targets=0, arg_value=np.pi/2)
+        # Compute the ideal propagator
+        U = qc.compute_unitary()
         # Compute the propagator
-        result = self.processor.run_state(basis(3,0), qc=qc)
-        # Get final propagator and project onto qubit subspace
-        final_state = project_on_qubit(result.states[-1])
+        prop = self.processor.run_propagator(qc=qc)
+        final_prop = project_on_qubit(prop)
         # Compute the average gate fidelity
-        f = fidelity(basis(2, 1), final_state)
-        # We want 99.99% Average gate fidelity
+        f = average_gate_fidelity(U, final_prop)
+        # We want 99.99% Average Gate Fidelity
         self.assertAlmostEqual(1, f, places=4, msg="Precision of RY-gate failed.")
 
     def test_rz_gate(self):
@@ -73,36 +77,29 @@ class TestSingleQubitGates(unittest.TestCase):
     def test_x_gate(self):
         qc = QubitCircuit(self.num_qubits)
         qc.add_gate("X", targets=0)
+        # Compute the ideal propagator
+        U = qc.compute_unitary()
         # Compute the propagator
-        result = self.processor.run_state(basis(3,0), qc=qc)
-        final_state = project_on_qubit(result.states[-1])
-        # Calculate the average state fidelity
-        f = fidelity(basis(2, 1), final_state)
-        # We want 99.99% average state fidelity
+        prop = self.processor.run_propagator(qc=qc)
+        final_prop = project_on_qubit(prop)
+        # Compute the average gate fidelity
+        f = average_gate_fidelity(U, final_prop)
+        # We want 99.99% Average Gate Fidelity
         self.assertAlmostEqual(1, f, places=4, msg="Precision of X-gate failed.")
 
     def test_hadamard_gate(self):
         qc = QubitCircuit(self.num_qubits)
         qc.add_gate("H", targets=0)
-        # Load circuit onto processor
-        coeffs, tlist = self.processor.load_circuit(qc)
-        # Prepare "plus" state as initial state
-        init_state = (basis(3, 0) + basis(3, 1)) / np.sqrt(2)
-        result = self.processor.run_state(init_state)
-        final_state = project_on_qubit(result.states[-1])
-        # This should be the ideal state
-        ideal_state = basis(2, 0)
-        f = fidelity(final_state, ideal_state)
-        # We want 99.99% average state fidelity
-        self.assertAlmostEqual(1, f, places=4, msg="Precision of H-gate failed")
-        # Prepare "1" as initial state
-        init_state = basis(3, 1) 
-        result = self.processor.run_state(init_state)
-        final_state = project_on_qubit(result.states[-1])
-        # This should be the ideal state up to a rz(pi) rotation
-        ideal_state = (basis(2, 0) + basis(2, 1)) / np.sqrt(2)
-        f = fidelity(final_state, ideal_state)
-        # We want 99.99% average state fidelity
+        # Compute the ideal propagator
+        U = qc.compute_unitary()
+        # Compute the propagator
+        prop = self.processor.run_propagator(qc=qc)
+        # Since we have Virtually rotated the Bloch sphere 180-degrees
+        # we need to rotate it back to get the correct propagator.
+        final_prop = rz(np.pi) * project_on_qubit(prop)
+        # Compute the average gate fidelity
+        f = average_gate_fidelity(U, final_prop)
+        # We want 99.99% Average Gate Fidelity
         self.assertAlmostEqual(1, f, places=4, msg="Precision of H-gate failed")
 
     def test_idling_gate(self):
@@ -158,38 +155,29 @@ class TestTwoQubitGates(unittest.TestCase):
         # Create a circuit
         qc = QubitCircuit(self.num_qubits)
         qc.add_gate("CZ", controls=0, targets=1)
-        # Simulate
-        init_state = tensor(basis(3,1), basis(3,1))
-        result = self.processor.run_state(init_state, qc=qc)
-        # Project final state onto the qsubit subspace
-        qubit_state = project_on_qubit(result.states[-1])
-        # Compute the phase and make sure that it is -1
-        phase = float(np.angle(qubit_state.full()[-1][0]))
-        self.assertAlmostEqual(phase, np.pi, places=2)
+        # Compute the ideal propagator
+        U = qc.compute_unitary()
+        # Compute the propagator
+        prop = self.processor.run_propagator(qc=qc, options={"nsteps": 1e5})
+        final_prop = project_on_qubit(prop)
+        # Compute the average gate fidelity
+        f = average_gate_fidelity(U, final_prop)
+        # We want 99.99% Average Gate Fidelity
+        self.assertAlmostEqual(1, f, places=4)
 
     def test_iswap_gate(self):
         # Create a circuit
         qc = QubitCircuit(self.num_qubits)
         qc.add_gate("ISWAP", controls=0, targets=1)
-        # Simulate
-        init_state = tensor(basis(3, 0), basis(3, 1))
-        result = self.processor.run_state(init_state, qc=qc)
-
-        # Project final state onto state 10
-        final_state = project_on_qubit(result.states[-1]).full()[2]
-        # Compute the phase
-        phase_1 = float(np.angle(final_state[0]))
-
-        # Simulate
-        init_state = tensor(basis(3, 1), basis(3, 0))
-        result = self.processor.run_state(init_state, qc=qc)
-        # Project final state onto state 01
-        final_state = project_on_qubit(result.states[-1]).full()[1]
-        # Compute the phase
-        phase_2 = float(np.angle(final_state[0]))
-        # Assert that the phase is -i
-        self.assertAlmostEqual(phase_1, -np.pi/2, places=2)
-        self.assertAlmostEqual(phase_2, -np.pi / 2, places=2)
+        # Compute the ideal propagator
+        U = qc.compute_unitary()
+        # Compute the propagator
+        prop = self.processor.run_propagator(qc=qc, options={"nsteps": 1e5})
+        # Need to append the "Virtual RZ-gates"
+        final_prop = tensor(rz(np.pi), rz(np.pi)) * project_on_qubit(prop)
+        # Compute the average gate fidelity
+        f = average_gate_fidelity(U, final_prop)
+        self.assertAlmostEqual(1, f, places=4)
 
 
 class TestThreeQubitGates(unittest.TestCase):
@@ -213,14 +201,15 @@ class TestThreeQubitGates(unittest.TestCase):
         qc = QubitCircuit(self.num_qubits)
         qc.user_gates = {"CCZS": cczs}
         qc.add_gate("CCZS", targets=[0,1,2], arg_value=[np.pi/2,np.pi,0])
-        # Simulate
-        initial_state = tensor(basis(3, 1), basis(3, 1), basis(3, 1))
-        result = self.processor.run_state(initial_state, qc=qc)
-        # Project final state onto the qsubit subspace
-        qubit_state = project_on_qubit(result.states[-1]) # type: ignore
-        # Compute the phase
-        phase = float(np.angle(qubit_state.full()[-1][0]))
-        self.assertAlmostEqual(phase, np.pi, places=1)
+        # Compute the ideal propagator
+        U = qc.compute_unitary()
+        # Compute the propagator
+        prop = self.processor.run_propagator(qc=qc, options={"nsteps": 1e5})
+        final_prop = project_on_qubit(prop)
+        # Compute the average gate fidelity
+        f = average_gate_fidelity(U, final_prop)
+        # We want 99.99% Average Gate Fidelity
+        self.assertAlmostEqual(1, f, places=4)
 
 
 if __name__ == "__main__":
