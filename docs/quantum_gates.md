@@ -1,6 +1,6 @@
-# Single-qubit gates
+## Single-qubit gates
 
-## Rotational X and Y-gates
+### Rotational X and Y-gates
 On this page we are describing how a single-qubit gate that implements rotation around the $x$- or $y$-axis on the Bloch sphere can be performed.
 
 We consider a driven weakly anharmonic qubit whose Hamiltonian in lab frame can be written as
@@ -56,12 +56,16 @@ By defining the angle
     \Theta(t)=\int_0^t\Omega^x(t')\mathrm{d}t',
 \end{equation}
 
-which is the angle a state is rotated given a waveform envelope $\Omega^x(t)$. This means that to implement a $\pi$-pulse on the $x$-axis one would solve $\Theta(t)=\pi$ and output the signal in-phase with the qubit drive.
+which is the angle a state is rotated given a waveform envelope $\Omega^x(t)$. This means that to implement a $\pi$-pulse on the $x$-axis one would solve $\Theta(t)=\pi$ and output the signal in-phase with the qubit drive. Typically $\Omega^x(t)$ is choosen as a gaussian pulse
+
+\begin{equation}
+     \Omega^x(t) = B e^{-\frac{(t-t_g/2)^2}{2\sigma^2}}
+\end{equation}
 
 In this simple example we assumed that we could ignore the higher levels of the qubit. In general leakage errors which take the qubit out of the computational subspace as well as phase errors can occur. To combat theses errors the so-called DRAG[@motzoi2009simple] procedure (Derivative Reduction by Adiabatic Gate) is used. In doing so we apply an extra signal in the out-of-phase component, such that
 
 \begin{align}
-    \Omega^x(t) = B e^{-\frac{(t-t_g)^2}{2\sigma^2}},\quad
+    \Omega^x(t) = B e^{-\frac{(t-t_g/2)^2}{2\sigma^2}},\quad
     \Omega^y(t) = q\sigma\frac{d\Omega^x(t)}{dt}
 \end{align}
 
@@ -73,7 +77,7 @@ where $q$ is a scale parameter that needs to be optimized with respect to a $\pi
 
 for a $\pi$-pulse with DRAG.
 
-### Example
+#### Example
 The following example shows how an $R_X(\pi/2)$-gate is implemented on the `Sarimner` using drag.
 
 ```py
@@ -126,3 +130,123 @@ Upon initialization, all qubit drives have a phase of $\phi=0$. Now, when a $R_Z
 
 **Note:** If a $R_Z(\phi)$-gate is performed at the end of a quantum circuit, this gate will not have any effect on the quantum state.
 
+## Multi-qubit gates
+
+### ISWAP-gate
+A two-qubit ISWAP-gate between two qubits labeled $i$ and $j$ are performed using a time-dependent coupling term of the form 
+
+\begin{equation}
+    \frac{H_\mathrm{coupling}(t)}{\hbar} =  g(t)(a^\dagger_ia_j+a_ia^\dagger_j),
+\end{equation}
+
+where the time-dependent coupling term is given by
+
+\begin{equation}
+    g(t) = g_0 \cos(\omega_d t + \phi),
+\end{equation}
+
+where $\omega_d$ is the driving frequency, and $g_0$ is the amplitude, and $\phi$ is a phase. Since we are working in the rotating frame 
+
+\begin{equation}
+U^R(t) = e^{i(\omega_{r_i}a^\dagger_ia_i+\omega_{r_j}a^\dagger_ja_j)t}
+\end{equation}
+
+the coupling Hamiltonian in the rotating frame reads
+
+\begin{align}
+    \frac{H^R_\mathrm{coupling}(t)}{\hbar} =  g(t)(a^\dagger_ia_je^{i\Delta_{ij}t}+a_ia^\dagger_je^{-i\Delta_{ij}t}),
+\end{align}
+
+where $\Delta_{ij} \equiv \omega_{r_i}-\omega_{r_j}$ is the difference in rotating frame frequency between qubit $i$ and $j$. By writing the exponentials on trigonometric form and seperating the real and imaginary part, the coupling term can be written as
+
+\begin{align}
+    \frac{H^R_\mathrm{coupling}(t)}{\hbar} =  g(t) \Big[(a^\dagger_ia_j + a_i a_j^\dagger)\cos(\Delta_{ij}t) + i(a^\dagger_ia_j - a_i a_j^\dagger)\sin(\Delta_{ij}t)\Big]
+\end{align}
+
+If we treat the Hamiltonian as an effective two level system and make the replacement 
+
+\begin{align}
+    (a^\dagger_i a_j + a_ia^\dagger_j) &\rightarrow (\sigma^x_i\sigma^x_j + \sigma^y_i\sigma^y_j)/2
+    \\
+    i(a^\dagger_i a_j - a_ia^\dagger_j)&\rightarrow (\sigma^y_i\sigma^x_j - \sigma^x_i\sigma^y_j) / 2
+\end{align}
+
+we obtain
+
+\begin{equation}
+    \frac{H^R_\mathrm{coupling}(t)}{\hbar} = \frac{g(t)}{2} \Big[(\sigma^x_i\sigma^x_j + \sigma^y_i\sigma^y_j)\cos(\Delta_{ij}t) + (\sigma^y_i\sigma^x_j - \sigma^x_i\sigma^y_j)\sin(\Delta_{ij}t)\Big].
+\end{equation}
+
+If we choose the rotating frame frequency for the two qubits to be the same ($\Delta_{ij}=0$) we get
+
+\begin{equation}
+    \frac{H_\mathrm{coupling}(t)}{\hbar} = \frac{g(t)}{2}(\sigma^x_i\sigma^x_j + \sigma^y_i\sigma^y_j).
+\end{equation}
+
+The evolution operator given by this Hamiltonian can analytically be found to be
+
+\begin{equation}
+    \exp(-i\int_0^t \frac{g(t')}{2}(\sigma^x_i\sigma^x_j + \sigma^y_i\sigma^y_j) \dd{t'}) = 
+    \begin{pmatrix}
+    0 & 0 & 0 & 0 \\
+    0 & \cos\theta & -i\sin\theta & 0 \\
+    0 & -i\sin\theta & \cos\theta & 0 \\
+    0 & 0 & 0 & 0 \\
+    \end{pmatrix}
+\end{equation}
+
+where 
+
+\begin{equation}
+    \theta \equiv \frac{1}{2}\int_0^t g(t')\dd{t}'.
+\end{equation}
+
+Hence we see that when $\theta=\pi/2$ which corresponds to $t=\pi/$ 
+
+the ISWAP-gate is realized
+
+
+
+#### Example
+To perform a CZ-gate between two qubits we do
+```py
+# Define a circuit and run the simulation
+num_qubits = 2
+circuit = QubitCircuit(num_qubits)
+circuit.add_gate("CZ", controls=0, targets=1)
+
+# Qubit frequencies in (GHz)
+qubit_frequencies = [2 * np.pi * 5.0, 2 * np.pi * 5.4]
+# Anharmonicity in (GHz)
+anharmonicities = [- 2 * np.pi * 0.3, - 2 * np.pi * 0.3]
+# T1's and T2's for the qubits in (ns)
+t1 = [60 * 1e3, 80 * 1e3]
+t2 = [100 * 1e3, 105 * 1e3]
+
+# Time of CZ-gate
+t = 100
+# corresponding coupling
+g = np.sqrt(2) * np.pi / t
+# Coupling matrix
+coupling_matrix = np.array([[0, g],
+                            [0, 0]])
+
+# Load the physical parameters onto the model
+model = SarimnerModel(
+    qubit_frequencies=qubit_frequencies,
+    anharmonicities=anharmonicities,
+    coupling_matrix=coupling_matrix,
+)
+
+# Choose compiler
+compiler = SarimnerCompiler(model=model)
+
+# Create the processor with the given hardware parameters
+sarimner = SarimnerProcessor(model=model, compiler=compiler)
+
+tlist, coeffs = sarimner.load_circuit(circuit)
+
+sarimner.plot_pulses(show_axis=True);
+```
+
+![CZ](figures/cz.png "cz")

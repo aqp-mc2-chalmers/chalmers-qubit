@@ -1,12 +1,12 @@
 # Introduction
 
-Welcome to the Chalmers Qubit simulator package! A simulation framework for Chalmers devices that can be used to simulate the running of quantum algorithms with realistic noise. We follow [qutip-qip](https://qutip-qip.readthedocs.io/en/stable/) to build a processor that can take in a quantum circuit (e.g., a QASM cicruit) and performs a master equation simulation adding noise such as T1 and T2. It is also possible to perform a Monte-Carlo trajectory simulation and customize the processor to add various types of noise such as [ZZCrossTalk](https://qutip-qip.readthedocs.io/en/latest/apidoc/qutip_qip.noise.html#qutip_qip.noise.ZZCrossTalk).
+Welcome to the Chalmers Qubit simulator package! A simulation framework for Chalmers devices that can be used to simulate the running of quantum algorithms with realistic noise. We follow [qutip-qip](https://qutip-qip.readthedocs.io/en/stable/) to build a processor that can take in a quantum circuit (e.g., OpenQASM 2.0) and performs a master equation simulation adding noise such as T1 and T2. It is also possible to perform a Monte-Carlo trajectory simulation and customize the processor to add various types of noise such as [ZZCrossTalk](reference/#chalmers_qubit.sarimner.noise.ZZCrossTalk).
 
 The package is under development and testing. 
 
 ## Installation
 
-The main requirement to use this package is [qutip-qip](https://qutip-qip.readthedocs.io/en/stable/) based on [qutip](https://qutip-qip.readthedocs.io/en/stable/): The Quantum Toolbox in Python. The requirements are already specified in the `setup.py` file and you can install the package `chalmers_qubit` simply by downloading this folder or cloning this repository and running:
+The main requirement to use this package is [qutip-qip](https://qutip-qip.readthedocs.io/en/stable/) based on [qutip](https://qutip-qip.readthedocs.io/en/stable/): The Quantum Toolbox in Python. The requirements are already specified in the `setup.cfg` file and you can install the package `chalmers_qubit` simply by downloading this folder or cloning this repository and running:
 
 ``` zsh
 pip install .

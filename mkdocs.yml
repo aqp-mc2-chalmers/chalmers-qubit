@@ -3,10 +3,10 @@ site_name: Chalmers Qubit Simulator
 nav:
 - Introduction:
   - Overview: index.md
-- Theory:
-  - Transmon qubits: transmons.md
-  - Single qubit gates: single_qubit_gates.md
-  - Multi qubit gates: multi_qubit_gates.md
+- Sarimner:
+  - Model: transmons.md
+  - Quantum Gates: quantum_gates.md
+  - Noise: noise.md
 - API Documentation: reference.md
 
 theme:
