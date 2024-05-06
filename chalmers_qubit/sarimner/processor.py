@@ -97,7 +97,7 @@ class SarimnerProcessor(Processor):
 
         # Save compiler pulses
         if coeffs is None and tlist is None:
-            raise Warning("The compiled quantum circuit contains no physical pulses.")
+            raise ValueError("The compiled quantum circuit contains no physical pulses.")
         else:
             self.set_coeffs(coeffs)
             self.set_tlist(tlist)
@@ -114,10 +114,7 @@ class SarimnerProcessor(Processor):
         **kwargs):
         if qc is not None:
             self.load_circuit(qc)
-        if not self.pulses:
-            raise ValueError("The compiled quantum circuit contains no physical pulses.")
-        else:
-            return super().run_state(init_state,analytical,states,noisy,solver,**kwargs)
+        return super().run_state(init_state,analytical,states,noisy,solver,**kwargs)
 
     def run_propagator(self, qc:Optional[QubitCircuit]=None, noisy:bool=False, **kwargs):
         """

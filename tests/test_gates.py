@@ -74,6 +74,14 @@ class TestSingleQubitGates(unittest.TestCase):
         # We want 99.99% average state fidelity
         self.assertAlmostEqual(1, f, places=4, msg="Precision of RZ-gate failed.")
 
+    def test_no_physical_pulse(self):
+        qc = QubitCircuit(self.num_qubits)
+        qc.add_gate("RZ", targets=0, arg_value=np.pi / 2)
+        init_state = (basis(3, 0) + basis(3, 1)) / np.sqrt(2)
+        # Raise value error if quantum circuit contain no physical pulses.
+        with self.assertRaises(ValueError):
+            self.processor.run_state(init_state, qc=qc)
+
     def test_x_gate(self):
         qc = QubitCircuit(self.num_qubits)
         qc.add_gate("X", targets=0)
