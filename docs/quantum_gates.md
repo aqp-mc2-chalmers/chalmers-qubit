@@ -77,7 +77,7 @@ where $q$ is a scale parameter that needs to be optimized with respect to a $\pi
 
 for a $\pi$-pulse with DRAG.
 
-#### Example
+#### Example: X-rotation with DRAG
 The following example shows how an $R_X(\pi/2)$-gate is implemented on the `Sarimner` using drag.
 
 ```py
@@ -88,7 +88,7 @@ from chalmers_qubit.sarimner import (
     SarimnerProcessor, SarimnerModel, SarimnerCompiler
 )
 
-# Create circuit with a sngle RX-gate
+# Create circuit with a single RX-gate
 circuit = QubitCircuit(1)
 circuit.add_gate("RX", targets=0, arg_value=np.pi/2)
 
@@ -118,7 +118,7 @@ plt.xlabel("Time (ns)")
 ![Drag Pulse](figures/drag.png "drag")
 
 ### Virtual Z-gate
-The virtual-z gate, we change our drive to include a phase $\phi$ so. All qubits are initialized with a phase of $\phi=0$
+To implement the $R_Z(\theta)$-gate, we include a phase $\phi$ to our drive
 
 \begin{equation}
     E(t)= \begin{cases}
@@ -126,10 +126,70 @@ The virtual-z gate, we change our drive to include a phase $\phi$ so. All qubits
     \end{cases}
 \end{equation}
 
-Upon initialization, all qubit drives have a phase of $\phi=0$. Now, when a $R_Z(\theta)$-gate is performed we simply update the phase of the corresponding qubit drive, such that $\phi$ shifts to $-\theta$. The minus sign here signifies that we do a rotation of the Bloch sphere rather than the state itself.
+Upon initialization, all qubit drives are initialized with a phase of $\phi=0$. Now, when a $R_Z(\theta)$-gate is performed we simply update the phase of the corresponding qubit drive, such that $\phi$ shifts to $-\theta$. The minus sign here signifies that we do a rotation of the Bloch sphere rather than the state itself.
 
 **Note:** If a $R_Z(\phi)$-gate is performed at the end of a quantum circuit, this gate will not have any effect on the quantum state.
 
+#### Example: Hadamard Gate Decomposition and Phase Correction
+
+The Hadamard gate ($H$) can be decomposed into a sequence of rotations: a $\pi$ rotation around the Z-axis followed by a $\pi/2$ rotation around the Y-axis. Mathematically, this is expressed as $H = iR_Y(\pi/2)R_Z(\pi)$, where $i$ is a global phase factor. Notably, this decomposition allows for implementing the Hadamard gate using only one physical gate.
+
+The following example simulates the Hadamard gate applied to the initial state $\ket{0}$.
+
+```py
+import numpy as np
+import matplotlib.pyplot as plt
+from qutip_qip.circuit import QubitCircuit
+from chalmers_qubit.sarimner import (
+    SarimnerProcessor, SarimnerModel, SarimnerCompiler
+)
+
+# Create circuit with a single Hadamard-gate
+circuit = QubitCircuit(1)
+circuit.add_gate("H", targets=0)
+
+# Qubit frequencies in (GHz)
+qubit_frequencies = [2 * np.pi * 5.0]
+# Anharmonicity in (GHz)
+anharmonicities = [- 2 * np.pi * 0.3]
+
+# Load the physical parameters onto the model
+model = SarimnerModel(qubit_frequencies=qubit_frequencies, 
+                      anharmonicities=anharmonicities)
+
+# Choose compiler
+compiler = SarimnerCompiler(model=model)
+
+# Create the processor with the given hardware parameters
+sarimner = SarimnerProcessor(model=model, compiler=compiler, noise=[])
+
+# Load circuit
+tlist, coeffs = sarimner.load_circuit(circuit)
+
+# Prepare initial state and run simulation
+init_state = basis(3, 0)
+result = sarimner.run_state(init_state)
+final_state = project_on_qubit(result.states[-1])
+print(final_state)
+```
+
+While the intended operation is to transform $\ket{0}$ to the equal superposition state $\ket{+}=(\ket{0}+\ket{1})/\sqrt{2}$, the simulation initially yields $\ket{-}=(\ket{0}-\ket{1})/\sqrt{2}$. This difference arises because the $R_Z(\pi)$ gate performs a virtual rotation on the Bloch sphere. This is illustrated in the figure below, where figure (a) shows the initial state $\ket{0}$. (b) shows the virtually rotated Bloch sphere after the $R_Z(\pi)$-gate, and (c) shows the final-state after the $R_Y(\pi/2)$-rotation. 
+
+![Drag Pulse](figures/virtualz.png "virtualz")
+
+The state is however unaffected by this virtual rotation of the Bloch sphere. Therefore, to obtain the correct phase factor of our state, we can use the `phase` attribute of the `compiler` class. This attribute holds the phase corrections for all qubits, i.e. how much we have rotated the Bloch sphere for each qubit. As such, applying a rotation gate (`rz`) with this phase to the final state will yeild the desired outcome.
+
+```python
+from qutip_qip.operations.gates import rz
+
+# Extract phase correction from the compiler
+phase = compiler.phase
+# Apply phase correction to the final state
+phase_corrected_state = rz(phase[0]) * final_state
+print(phase_corrected_state)
+```
+
+<!---
 ## Multi-qubit gates
 
 ### ISWAP-gate
@@ -198,7 +258,7 @@ The evolution operator given by this Hamiltonian can analytically be found to be
 where 
 
 \begin{equation}
-    \theta \equiv \frac{1}{2}\int_0^t g(t')\dd{t}'.
+    \theta \equiv \frac{1}{2}\int_0^t g(t')\dd{t}' = \frac{g_0}{2}\int_0^t \cos(\omega_d t' + \phi) \dd{t}'.
 \end{equation}
 
 Hence we see that when $\theta=\pi/2$ which corresponds to $t=\pi/$ 
@@ -250,3 +310,4 @@ sarimner.plot_pulses(show_axis=True);
 ```
 
 ![CZ](figures/cz.png "cz")
+--->

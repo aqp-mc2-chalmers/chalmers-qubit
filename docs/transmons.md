@@ -1,33 +1,36 @@
-# Transmons
+## Transmons
 
-To simulate the quantum circuits running on an actual quantum processor we model our Hamiltonian as
+Quantum processors operate based on the manipulation of qubits. To simulate how quantum circuits behave on such devices, we model their Hamiltonian. The Hamiltonian for a transmon qubit, is given by:
 
 \begin{equation}
     \label{eq:transmon}
     H = \sum_{i=1}^N(\omega_{q_i} a^\dagger a +  \frac{\alpha_i}{2} a^{\dagger 2} a^2),
 \end{equation}
 
-where $N$ is the number of qubits, $\omega_q$ is the qubit frequency and $\alpha$ is the anhamronicity. In the rotating frame of $U(t)=e^{i\omega_r t a^\dagger a}$, where $\omega_r$ is the rotating frame frequency. The Hamiltonian reads
+where $N$ is the number of qubits, $\omega_q$ is the qubit frequency and $\alpha$ is the anhamronicity. We often work in a rotating frame to simplify calculations. This involves applying a transformation $U(t) = e^{i\omega_r t a^\dagger a}$, where $\omega_r$ is the rotating frame frequency. In this frame, the Hamiltonian becomes:
 
 \begin{equation}
     \label{eq:transmon_rotating}
-    H^R = \sum_{i=1}^N(\Delta_i a^\dagger a +  \frac{\alpha_i}{2} a^{\dagger 2} a^2),
+    H^R = \sum_{i=1}^N(\Delta_i a^\dagger a +  \frac{\alpha_i}{2} a^{\dagger 2} a^2).
 \end{equation}
 
-where $\Delta_i = \omega_{q_i} - \omega_{r_i}$ is the qubit detuning
+Here $\Delta_i = \omega_{q_i} - \omega_{r_i}$ represents the detuning of the i-th qubit, which is the difference between its intrinsic frequency and the rotating frame frequency.
 
-## Example
-To create a we simply initialize a model
+### Example: Initializing a Model with Hardware Parameters
 
-```py
+The `SarimnerModel` allows us to create a model with specific hardware parameters. Here's an example of how to initialize such a model:
+
+```python
+from chalmers_qubit.sarimner import SarimnerModel
 # Qubit frequencies in (GHz)
-qubit_frequencies = [2 * np.pi * 5]
+qubit_frequencies = [2 * np.pi * 5.0]
 # Anharmonicity in (GHz)
 anharmonicities = [-2 * np.pi * 0.3]
+
 # Load the physical parameters onto the model
 model = SarimnerModel(
     qubit_frequencies=qubit_frequencies, anharmonicities=anharmonicities
 )
-print(model.drift)
 ```
-We can print the corresponding drift terms for each qubit.
+
+This code defines qubit frequencies and anharmonicities for a single qubit system (N=1) and creates a `SarimnerModel` object to represent the physical system. 
