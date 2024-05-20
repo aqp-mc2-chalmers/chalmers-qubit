@@ -1,0 +1,38 @@
+name: Coverage
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: Install dependencies
+        run: |
+          pip install coverage coverage-badge
+
+      - name: Run tests and generate coverage report
+        run: |
+          coverage run -m unittest discover
+
+      - name: Generate coverage badge for README
+        run: |
+          coverage-badge -o coverage.svg
+
+      - name: Generate coverage badge for docs
+        run: |
+          coverage-badge -o docs/coverage.svg
