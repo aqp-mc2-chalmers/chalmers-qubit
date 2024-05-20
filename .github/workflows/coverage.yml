@@ -15,8 +15,12 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.9
+    
+      - name: Install package
+        run: |
+          pip install '.[full]'
 
-      - name: Install dependencies
+      - name: Install coverage dependencies
         run: |
           pip install coverage coverage-badge
 
