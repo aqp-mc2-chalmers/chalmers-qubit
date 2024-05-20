@@ -126,7 +126,7 @@ class SarimnerProcessor(Processor):
         noisy: bool, optional
             If noise are included. Default is False.
         **kwargs
-           Keyword arguments for the qutip solver.
+            Keyword arguments for the qutip solver.
         Returns
         -------
         prop: list of Qobj or Qobj

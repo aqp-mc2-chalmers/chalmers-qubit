@@ -24,13 +24,18 @@ The `SarimnerModel` allows us to create a model with specific hardware parameter
 from chalmers_qubit.sarimner import SarimnerModel
 # Qubit frequencies in (GHz)
 qubit_frequencies = [2 * np.pi * 5.0]
+# Rotating frame frequencies in (GHz)
+rotating_frame_frequencies = [2 * np.pi * 4.9]
 # Anharmonicity in (GHz)
 anharmonicities = [-2 * np.pi * 0.3]
 
 # Load the physical parameters onto the model
 model = SarimnerModel(
-    qubit_frequencies=qubit_frequencies, anharmonicities=anharmonicities
+    qubit_frequencies=qubit_frequencies, 
+    anharmonicities=anharmonicities,
+    rotating_frame_frequencies=rotating_frame_frequencies,
 )
 ```
-
 This code defines qubit frequencies and anharmonicities for a single qubit system (N=1) and creates a `SarimnerModel` object to represent the physical system. 
+
+It should be noted that `rotating_frame_frequencies` is an optional argument and if it is not specified, the model will set the `rotating_frame_frequencies` equal to the `qubit_frequencies`.

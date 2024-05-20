@@ -1,5 +1,8 @@
 site_name: Chalmers Qubit Simulator
-
+site_description: "A package to simulate quantum circuits on transmons."
+site_url: "https://aqp-mc2-chalmers.github.io/chalmers-qubit/"
+repo_url: "https://github.com/aqp-mc2-chalmers/chalmers-qubit"
+repo_name: "aqp-mc2-chalmers/chalmers-qubit"
 nav:
 - Introduction:
   - Overview: index.md
@@ -16,13 +19,17 @@ theme:
 
     # Palette toggle for automatic mode
     - media: "(prefers-color-scheme)"
+      primary: indigo
+      accent: indigo
       toggle:
         icon: material/brightness-auto
         name: Switch to light mode
-
+  
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
+      primary: indigo
+      accent: indigo
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
@@ -30,6 +37,8 @@ theme:
     # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
+      primary: indigo
+      accent: indigo
       toggle:
         icon: material/brightness-4
         name: Switch to system preference
