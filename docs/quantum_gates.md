@@ -173,11 +173,11 @@ final_state = project_on_qubit(result.states[-1])
 print(final_state)
 ```
 
-While the intended operation is to transform $\ket{0}$ to the equal superposition state $\ket{+}=(\ket{0}+\ket{1})/\sqrt{2}$, the simulation initially yields $\ket{-}=(\ket{0}-\ket{1})/\sqrt{2}$. This difference arises because the $R_Z(\pi)$ gate performs a virtual rotation on the Bloch sphere. This is illustrated in the figure below, where figure (a) shows the initial state $\ket{0}$. (b) shows the virtually rotated Bloch sphere after the $R_Z(\pi)$-gate, and (c) shows the final-state after the $R_Y(\pi/2)$-rotation. 
+While the intended operation is to transform $\ket{0}$ to the equal superposition state $\ket{+}=(\ket{0}+\ket{1})/\sqrt{2}$, the simulation initially yields $\ket{-}=(\ket{0}-\ket{1})/\sqrt{2}$. This difference arises because the $R_Z(\pi)$ gate performs a virtual rotation on the Bloch sphere. This is illustrated in the figure below, where figure (a) shows the initial state $\ket{0}$. (b) shows the virtually rotated Bloch sphere after the $R_Z(\pi)$-gate, and (c) shows the final-state after the $R_Y(\pi/2)$-rotation with the green arrow showing the direction of the drive. 
 
 ![Drag Pulse](figures/virtualz.png "virtualz")
 
-The state is however unaffected by this virtual rotation of the Bloch sphere. Therefore, to obtain the correct phase factor of our state, we can use the `phase` attribute of the `compiler` class. This attribute holds the phase corrections for all qubits, i.e. how much we have rotated the Bloch sphere for each qubit. As such, applying a rotation gate (`rz`) with this phase to the final state will yeild the desired outcome.
+The state is however unaffected by this virtual rotation of the Bloch sphere. Therefore, to obtain the correct phase factor of our state, we can use the `phase` attribute of the `compiler` class. This attribute holds the phase corrections for all qubits, i.e. how much we have rotated the Bloch sphere for each qubit. As such, applying a rotation gate (`rz`) with this phase to the final state will yeild a state with the correct phase.
 
 ```python
 from qutip_qip.operations.gates import rz
@@ -189,7 +189,6 @@ phase_corrected_state = rz(phase[0]) * final_state
 print(phase_corrected_state)
 ```
 
-<!---
 ## Multi-qubit gates
 
 ### ISWAP-gate
@@ -226,9 +225,9 @@ where $\Delta_{ij} \equiv \omega_{r_i}-\omega_{r_j}$ is the difference in rotati
 If we treat the Hamiltonian as an effective two level system and make the replacement 
 
 \begin{align}
-    (a^\dagger_i a_j + a_ia^\dagger_j) &\rightarrow (\sigma^x_i\sigma^x_j + \sigma^y_i\sigma^y_j)/2
+    (a^\dagger_i a_j + a_ia^\dagger_j) &\rightarrow (\sigma^x_i\sigma^x_j + \sigma^y_i\sigma^y_j)/2 = \sigma^-_i\sigma^+_j + \sigma^+_i\sigma^-_j
     \\
-    i(a^\dagger_i a_j - a_ia^\dagger_j)&\rightarrow (\sigma^y_i\sigma^x_j - \sigma^x_i\sigma^y_j) / 2
+    i(a^\dagger_i a_j - a_ia^\dagger_j)&\rightarrow (\sigma^y_i\sigma^x_j - \sigma^x_i\sigma^y_j) / 2 = i(\sigma^-_i\sigma^+_j - \sigma^+_i\sigma^-_j)
 \end{align}
 
 we obtain
@@ -261,9 +260,7 @@ where
     \theta \equiv \frac{1}{2}\int_0^t g(t')\dd{t}' = \frac{g_0}{2}\int_0^t \cos(\omega_d t' + \phi) \dd{t}'.
 \end{equation}
 
-Hence we see that when $\theta=\pi/2$ which corresponds to $t=\pi/$ 
-
-the ISWAP-gate is realized
+Hence we see that when $\theta=\pi/2$ which corresponds to $t=1/\omega_d\arcsin(\pi\omega_d/g_0)-\phi$ the ISWAP-gate is realized.
 
 
 
@@ -310,4 +307,3 @@ sarimner.plot_pulses(show_axis=True);
 ```
 
 ![CZ](figures/cz.png "cz")
---->
