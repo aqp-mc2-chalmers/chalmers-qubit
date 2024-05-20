@@ -1,5 +1,5 @@
 import numpy as np
-from qubit_qip.devic.processor import Model
+from qutip_qip.device.processor import Model
 from qutip_qip.compiler import GateCompiler, Instruction
 from qutip_qip.operations import Gate
 
