@@ -1,8 +1,20 @@
 import numpy as np
 from qutip import Qobj
 
-# Ideal gate
-def cczs(args):
+def cczs(args:tuple) -> Qobj:
+    """
+    Unitary of the cczs-gate
+
+    Parameters
+    ----------
+    args: Tuple
+        Input angles for the gate.
+
+    Returns
+    -------
+    U: Qobj
+        The unitary for the cczs-gate.
+    """
     theta, phi, gamma = args
     U = np.array(
         [
@@ -35,4 +47,5 @@ def cczs(args):
         ],
         dtype="complex",
     )
-    return Qobj(U, dims=[[2] * 3, [2] * 3])
+    U = Qobj(U, dims=[[2] * 3, [2] * 3])
+    return U

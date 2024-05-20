@@ -1,4 +1,5 @@
 import numpy as np
+from qubit_qip.devic.processor import Model
 from qutip_qip.compiler import GateCompiler, Instruction
 from qutip_qip.operations import Gate
 
@@ -9,16 +10,10 @@ class SarimnerCompiler(GateCompiler):
     Compiler for :class:`.ChalmersQubits`.
     Compiled pulse strength is in the unit of GHz.
 
-    Supported native gates: "RX", "RZ", "CZ", "CCZS".
-
     Parameters
     ----------
-    num_qubits: int
-        The number of qubits in the system.
-
-    params: dict
-        A Python dictionary contains the name and the value of the parameters.
-        See :meth:`.ChalmersQubitsModel` for the definition.
+    model: Model
+        model object of the superconducting qubit device with hardware parameters
 
     Attributes
     ----------
@@ -27,14 +22,20 @@ class SarimnerCompiler(GateCompiler):
 
     params: dict
         A Python dictionary contains the name and the value of the parameters,
-        such as laser frequency, detuning etc.
+        such as qubit frequency, anharmonicity etc.
 
     gate_compiler: dict
         The Python dictionary in the form of {gate_name: decompose_function}.
         It saves the decomposition scheme for each gate.
+
+    phase: list
+        List with values of how much we have virtually rotated the Bloch sphere of each qubit.
+
+    global_phase: float
+        The global phase of the quantum state.
     """
 
-    def __init__(self, model):
+    def __init__(self, model:Model):
         self.num_qubits = model.num_qubits
         self.params = model.params
 
