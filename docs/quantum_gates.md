@@ -191,8 +191,7 @@ print(phase_corrected_state)
 
 ## Multi-qubit gates
 
-### ISWAP-gate
-A two-qubit ISWAP-gate between two qubits labeled $i$ and $j$ are performed using a time-dependent coupling term of the form 
+Two-qubit gates between two qubits labeled $i$ and $j$ are performed using a time-dependent coupling term of the form 
 
 \begin{equation}
     \frac{H_\mathrm{coupling}(t)}{\hbar} =  g(t)(a^\dagger_ia_j+a_ia^\dagger_j),
@@ -204,7 +203,9 @@ where the time-dependent coupling term is given by
     g(t) = g_0 \cos(\omega_d t + \phi),
 \end{equation}
 
-where $\omega_d$ is the driving frequency, and $g_0$ is the amplitude, and $\phi$ is a phase. Since we are working in the rotating frame 
+where $\omega_d$ is the driving frequency, and $g_0$ is the amplitude, and $\phi$ is a phase. The drive-frequency is choosen to be the transition frequency for the corresponding gate, for example $\omega_d=\omega_1-\omega_2$ for the ISWAP-gate and $\omega_d=\omega_1+\alpha_1-\omega_2$ for the CZ-gate.
+<!--
+Since we are working in the rotating frame 
 
 \begin{equation}
 U^R(t) = e^{i(\omega_{r_i}a^\dagger_ia_i+\omega_{r_j}a^\dagger_ja_j)t}
@@ -236,6 +237,21 @@ we obtain
     \frac{H^R_\mathrm{coupling}(t)}{\hbar} = \frac{g(t)}{2} \Big[(\sigma^x_i\sigma^x_j + \sigma^y_i\sigma^y_j)\cos(\Delta_{ij}t) + (\sigma^y_i\sigma^x_j - \sigma^x_i\sigma^y_j)\sin(\Delta_{ij}t)\Big].
 \end{equation}
 
+Plugging this into a symbolic program, like mathematica, one gets
+
+\begin{equation}
+    \begin{pmatrix}
+    1 & 0 & 0 & 0 \\
+    0 & \cos(2\sqrt{\alpha^2+\beta^2}) & (-\beta-i\alpha)\frac{\sin(2\sqrt{\alpha^2+\beta^2})}{\sqrt{\alpha^2+\beta^2}} & 0 \\
+    0 & (\beta-i\alpha)\frac{\sin(2\sqrt{\alpha^2+\beta^2})}{\sqrt{\alpha^2+\beta^2}} & \cos(2\sqrt{\alpha^2+\beta^2}) & 0 \\
+    0 & 0 & 0 & 1 \\
+    \end{pmatrix}
+\end{equation}
+
+where 
+
+---
+
 If we choose the rotating frame frequency for the two qubits to be the same ($\Delta_{ij}=0$) we get
 
 \begin{equation}
@@ -247,10 +263,10 @@ The evolution operator given by this Hamiltonian can analytically be found to be
 \begin{equation}
     \exp(-i\int_0^t \frac{g(t')}{2}(\sigma^x_i\sigma^x_j + \sigma^y_i\sigma^y_j) \dd{t'}) = 
     \begin{pmatrix}
-    0 & 0 & 0 & 0 \\
+    1 & 0 & 0 & 0 \\
     0 & \cos\theta & -i\sin\theta & 0 \\
     0 & -i\sin\theta & \cos\theta & 0 \\
-    0 & 0 & 0 & 0 \\
+    0 & 0 & 0 & 1 \\
     \end{pmatrix}
 \end{equation}
 
@@ -261,11 +277,11 @@ where
 \end{equation}
 
 Hence we see that when $\theta=\pi/2$ which corresponds to $t=1/\omega_d\arcsin(\pi\omega_d/g_0)-\phi$ the ISWAP-gate is realized.
-
+-->
 
 
 #### Example
-To perform a CZ-gate between two qubits we do
+To following example shows the execution of a CZ-gate.
 ```py
 # Define a circuit and run the simulation
 num_qubits = 2
