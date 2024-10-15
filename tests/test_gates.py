@@ -13,10 +13,8 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 class TestSingleQubitGates(unittest.TestCase):
     def setUp(self) -> None:
         self.num_qubits = 1
-        self.model = SarimnerModel(
-            qubit_frequencies=[2 * np.pi * 5.0],
-            anharmonicities=[-2 * np.pi * 0.3],
-        )
+        transmon_dict = {0: {"frequency": 5.0, "anharmonicity": 0.3}}
+        self.model = SarimnerModel(transmon_dict=transmon_dict)
         self.processor = SarimnerProcessor(model=self.model)
         return super().setUp()
 
@@ -147,12 +145,13 @@ class TestSingleQubitGates(unittest.TestCase):
 class TestTwoQubitGates(unittest.TestCase):
     def setUp(self) -> None:
         self.num_qubits = 2
-        self.model = SarimnerModel(
-            qubit_frequencies=[2 * np.pi * 5.0, 2 * np.pi * 5.4],
-            anharmonicities=[-2 * np.pi * 0.3, -2 * np.pi * 0.3],
-            coupling_matrix=np.array([[0, 2* np.pi * 1e-3], 
-                                 [0, 0]]),
-        )
+        transmon_dict = {
+            0: {"frequency": 5.0, "anharmonicity": 0.3},
+            1: {"frequency": 5.4, "anharmonicity": 0.3},
+        }
+        coupling_dict = {(0,1): 1e-3}
+        self.model = SarimnerModel(transmon_dict=transmon_dict, 
+                                   coupling_dict=coupling_dict)
         self.processor = SarimnerProcessor(model=self.model)
         return super().setUp()
 
@@ -191,13 +190,15 @@ class TestTwoQubitGates(unittest.TestCase):
 class TestThreeQubitGates(unittest.TestCase):
     def setUp(self) -> None:
         self.num_qubits = 3
-        self.model = SarimnerModel(
-            qubit_frequencies=[2 * np.pi * 5.0, 2 * np.pi * 5.4, 2 * np.pi * 5.2],
-            anharmonicities=[-2 * np.pi * 0.3, -2 * np.pi * 0.3, -2 * np.pi * 0.3],
-            coupling_matrix=np.array([[0, 2 * np.pi * 1e-3, 2 * np.pi * 1e-3], 
-                                 [0, 0, 0], 
-                                 [0, 0, 0]]),
-        )
+        transmon_dict = {
+            0: {"frequency": 5.0, "anharmonicity": 0.3},
+            1: {"frequency": 5.3, "anharmonicity": 0.3},
+            2: {"frequency": 5.2, "anharmonicity": 0.3},
+        }
+        coupling_dict = {(0, 1): 1e-3,
+                         (0, 2): 1e-3}
+        self.model = SarimnerModel(transmon_dict=transmon_dict,
+                                   coupling_dict=coupling_dict)
         self.processor = SarimnerProcessor(model=self.model)
         return super().setUp()
 
@@ -218,7 +219,6 @@ class TestThreeQubitGates(unittest.TestCase):
         f = average_gate_fidelity(U, final_prop)
         # We want 99.99% Average Gate Fidelity
         self.assertAlmostEqual(1, f, places=4)
-
 
 if __name__ == "__main__":
     unittest.main()

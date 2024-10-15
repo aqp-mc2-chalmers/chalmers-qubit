@@ -21,19 +21,15 @@ def _bloch_redfield(psi: Qobj, t1, t2, t: float) -> Qobj:
 
 class TestSingleQubitNoise(unittest.TestCase):
     def setUp(self) -> None:
-        # Qubit frequencies in (GHz)
-        qubit_frequencies = [2 * np.pi * 5.0]
-        # Anharmonicity in (GHz)
-        anharmonicities = [- 2 * np.pi * 0.3]
-        # T1's and T2's for the qubits in (ns)
-        self.t1 = [60*1e3]
-        self.t2 = [40*1e3]
+        transmon_dict = {
+            0: {"frequency": 5.0, "anharmonicity": -0.30},
+        }
+        self.decoherence_dict = {
+            0: {"t1": 50e3, "t2": 40e3},
+        }
         # Create the processor with the given hardware parameters
         # Load the physical parameters onto the model
-        self.model = SarimnerModel(
-                        qubit_frequencies=qubit_frequencies, 
-                        anharmonicities=anharmonicities
-                    )
+        self.model = SarimnerModel(transmon_dict=transmon_dict)
         return super().setUp()
 
     def tearDown(self) -> None:
@@ -54,19 +50,21 @@ class TestSingleQubitNoise(unittest.TestCase):
         t_total = 80*1e3 # ns
         tlist = np.linspace(0, t_total, 10)
         # Add noise
-        noise = [DecoherenceNoise(t1=self.t1, t2=self.t2)]
+        noise = [DecoherenceNoise(self.decoherence_dict)]
         # Create the processor with the given hardware parameters
         sarimner = SarimnerProcessor(model=self.model, noise=noise)
         # Master equation simulation
         result = sarimner.run_state(init_state, tlist=tlist)
         final_state = project_on_qubit(result.states[-1])
-        predicted_state = _bloch_redfield(init_state, self.t1[0], self.t2[0], t_total)
+        t1 = self.decoherence_dict[0]["t1"]
+        t2 = self.decoherence_dict[0]["t2"]
+        predicted_state = _bloch_redfield(init_state, t1, t2, t_total)
         f = fidelity(final_state, predicted_state)
         self.assertAlmostEqual(1, f, places=6)
 
     def test_relaxation(self):
         # Add noise
-        noise = [DecoherenceNoise(t1=self.t1, t2=self.t2)]
+        noise = [DecoherenceNoise(self.decoherence_dict)]
         # Create the processor with the given hardware parameters
         sarimner = SarimnerProcessor(model=self.model, noise=noise)
         # master equation simulation
@@ -78,7 +76,8 @@ class TestSingleQubitNoise(unittest.TestCase):
         result = sarimner.run_state(init_state, tlist=tlist, e_ops=e_ops)
         # Get the population of the |0> state
         simulated_relaxation = result.expect[0]
-        theoretical_relaxation = np.exp(-tlist / self.t1)
+        t1 = self.decoherence_dict[0]["t1"]
+        theoretical_relaxation = np.exp(-tlist / t1)
         # Verify that simulated relaxation follows the theoretical prediction within a tolerance
         np.testing.assert_allclose(
             simulated_relaxation,
@@ -90,7 +89,7 @@ class TestSingleQubitNoise(unittest.TestCase):
 
     def test_spin_echo(self):
         # Do spin echo / Hahn echo experiment
-        noise = [DecoherenceNoise(t1=self.t1, t2=self.t2)]  # Create noise
+        noise = [DecoherenceNoise(self.decoherence_dict)]  # Create noise
         # Initial state for the simulation
         init_state = basis(3, 0)
         # Idling time list in (ns)
@@ -114,7 +113,8 @@ class TestSingleQubitNoise(unittest.TestCase):
             simulated_decay.append(result.expect[0][-1])
             total_time.append(t_total)
         # Theoretical decay for spin echo
-        theoretical_decay = (np.exp(-np.array(total_time) / self.t2) + 1) / 2
+        t2 = self.decoherence_dict[0]["t2"]
+        theoretical_decay = (np.exp(-np.array(total_time) / t2) + 1) / 2
         np.testing.assert_allclose(
             1-np.array(simulated_decay),
             theoretical_decay,
@@ -126,16 +126,17 @@ class TestSingleQubitNoise(unittest.TestCase):
 
 class TestTwoQubitNoise(unittest.TestCase):
     def setUp(self) -> None:
+        transmon_dict = {
+            0: {"frequency": 5.0, "anharmonicity": -0.30},
+            1: {"frequency": 5.4, "anharmonicity": -0.30},
+        }
+        coupling_dict = {(0,1): 1e-3}
         self.model = SarimnerModel(
-            qubit_frequencies=[2 * np.pi * 5.0, 2 * np.pi * 5.4],
-            anharmonicities=[-2 * np.pi * 0.3, -2 * np.pi * 0.3],
-            coupling_matrix=np.array([[0, 2 * np.pi * 1e-3], [0, 0]]),
+            transmon_dict=transmon_dict,
+            coupling_dict=coupling_dict
         )
-        # T1's and T2's for the qubits in (ns)
-        self.t1 = [60 * 1e9, 80 * 1e9]
-        self.t2 = [40 * 1e9, 50 * 1e9]
         # Cross talk matrix (GHz)
-        self.cross_talk_matrix = np.array([[0, 2e-4], [0, 0]])
+        self.cross_talk_dict = {(0,1): 2e-4}
         return super().setUp()
 
     def tearDown(self) -> None:
@@ -143,7 +144,7 @@ class TestTwoQubitNoise(unittest.TestCase):
 
     def test_zz_cross_talk(self):
         # Add noise
-        noise = [ZZCrossTalk(self.cross_talk_matrix)]
+        noise = [ZZCrossTalk(self.cross_talk_dict)]
         # Create the processor with the given hardware parameters
         sarimner = SarimnerProcessor(model=self.model, noise=noise)
         # Prepare qubit in 11 state
@@ -155,7 +156,8 @@ class TestTwoQubitNoise(unittest.TestCase):
         result = sarimner.run_state(rho, tlist=tlist)
         final_state = project_on_qubit(result.states[-1])
         simulated_phase = np.angle(final_state.full()[3,0])
-        predicted_phase = np.angle(np.exp(-1j * self.cross_talk_matrix[0, 1] * t_total))
+        zz = 2*np.pi*self.cross_talk_dict[(0,1)]
+        predicted_phase = np.angle(np.exp(-1j * zz * t_total))
         # Check that predicted phase is equal to simulated phase
         self.assertAlmostEqual(predicted_phase, simulated_phase, places=5)
 
