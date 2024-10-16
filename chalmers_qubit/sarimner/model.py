@@ -4,6 +4,8 @@ from qutip import destroy, tensor
 from qutip_qip.device import Model
 
 __all__ = ["SarimnerModel"]
+
+
 class SarimnerModel(Model):
     """
     Initializes a new quantum system simulation configuration.
@@ -70,50 +72,10 @@ class SarimnerModel(Model):
     _noise : list
         List initialized for adding noise models.
     """
-    def __init__(
-        self,
-        qubit_frequencies: list,
-        anharmonicities: list,
-        rotating_frame_frequencies: Optional[list] = None,
-        coupling_matrix: Union[float, np.ndarray, None] = None,
-        dims: Optional[list] = None,
-    ):
-
-        # number of qubits
-        num_qubits = len(qubit_frequencies)
-
-        if len(anharmonicities) != num_qubits:
-            raise ValueError("The length of anharmonicities must be the same as num_qubits.")
-
-        if isinstance(coupling_matrix, float):
-            # Create an n x n matrix filled with zeros
-            matrix = np.zeros((num_qubits, num_qubits))
-
-            # Fill the upper triangular part of the matrix with x
-            # NOT SURE IF THIS IS CORRECT
-            for i in range(num_qubits):
-                for j in range(i+1, num_qubits):
-                    matrix[i, j] = coupling_matrix
-            coupling_matrix = matrix
-
-        elif (
-            isinstance(coupling_matrix, np.ndarray) is False
-            and coupling_matrix is not None
-        ):
-            raise ValueError("coupling_matrix should be type int or numpy.ndarray.")
-
-        # Initialize class variables if all checks pass
-        self.num_qubits = num_qubits
-        self.qubit_frequencies = qubit_frequencies
-        self.anharmonicity = anharmonicities
-        self.coupling_matrix = coupling_matrix
-        self.dims = dims if dims is not None else [3] * num_qubits
-
-        if rotating_frame_frequencies is None:
-            self.rotating_frame_frequencies = self.qubit_frequencies
-        else: 
-            self.rotating_frame_frequencies = rotating_frame_frequencies
-
+    def __init__(self, transmon_dict: dict, coupling_dict: Optional[dict] = None, dim: int = 3):
+        self.num_qubits = int(len(transmon_dict))
+        # dimension of each subsystem
+        self.dims = [dim] * self.num_qubits
         self.params = {
             "wq": self.qubit_frequencies,
             "alpha": self.anharmonicity,
@@ -126,24 +88,42 @@ class SarimnerModel(Model):
         self._controls = self._set_up_controls()
         self._noise = []
 
+    @staticmethod
+    def _parse_dict(d: dict) -> dict:
+        """Multiply the values of the dict with 2*pi.
+
+        Args:
+            d (dict): dictionary with frequencies.
+
+        Returns:
+            dict: dictionary where the frequencies that have been converted to radial frequencies.
+        """
+        def multiply_values(d: dict):
+            for key, value in d.items():
+                if isinstance(value, dict):
+                    multiply_values(value)
+                elif isinstance(value, (int, float)):
+                    # Multiply value by 2*pi to get radial frequency.
+                    d[key] = 2 * np.pi * value
+        # Create copies of the dictionaries to avoid modifying the original one
+        new_dict = deepcopy(d)
+        # Apply multiplication
+        multiply_values(new_dict)
+        return new_dict
+
     def _set_up_drift(self):
         drift = []
-        for m in range(self.num_qubits):
-            destroy_op = destroy(self.dims[m])
-            alpha = self.anharmonicity[m] / 2.0
-            omega = self.qubit_frequencies[m]
-            omega_rot = self.rotating_frame_frequencies[m]
-            drift.append(
-                ((omega - omega_rot) * destroy_op.dag() * destroy_op
-                 + alpha * destroy_op.dag()**2 * destroy_op**2, [m])
-            )
+        for key, value in self.params["transmons"].items():
+            destroy_op = destroy(self.dims[key])
+            alpha = value["anharmonicity"]
+            # We are simulating qubits in the rotating frame
+            drift.append((alpha / 2 * destroy_op.dag()**2 * destroy_op**2, [key]))
         return drift
 
     def _set_up_controls(self):
         """
         Generate the Hamiltonians and save them in the attribute `controls`.
         """
-        num_qubits = self.num_qubits
         dims = self.dims
         controls = {}
 
@@ -168,7 +148,7 @@ class SarimnerModel(Model):
     def get_control_latex(self):
         """
         Get the labels for each Hamiltonian.
-        It is used in the method method :meth:`.Processor.plot_pulses`.
+        It is used in the method :meth:`.Processor.plot_pulses`.
         It is a 2-d nested list, in the plot,
         a different color will be used for each sublist.
         """
@@ -183,8 +163,9 @@ class SarimnerModel(Model):
 
         for m in range(num_qubits - 1):
             for n in range(m + 1, num_qubits):
-                label_zz[f"(xx+yy){m}{n}"] = r"$a^\dagger_{"+ f"{m}" + r"}a_{" + f"{n}" + r"} + a^\dagger_{" + f"{n}" + r"}a_{" + f"{m}" + r"}$"
-                label_zz[f"(yx-xy){m}{n}"] = r"$i(a^\dagger_{"+ f"{m}" + r"}a_{" + f"{n}" + r"} - a^\dagger_{" + f"{n}" + r"}a_{" + f"{m}" + r"})$"
+                label_zz[f"iswap{m}{n}"] = r"$iswap_{"+f"{m}{n}"+"}$"
+                label_zz[f"cz_real{m}{n}"] = r"$cz_{" + f"{m}{n}" + "}$"
+                label_zz[f"cz_imag{m}{n}"] = r"$\Im cz_{" + f"{m}{n}" + "}$"
 
         labels.append(label_zz)
         return labels
