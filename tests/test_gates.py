@@ -3,7 +3,7 @@ import numpy as np
 from qutip import basis, tensor, fidelity, average_gate_fidelity
 from qutip_qip.circuit import QubitCircuit
 from qutip_qip.operations import rz
-from chalmers_qubit.sarimner import SarimnerModel, SarimnerProcessor
+from chalmers_qubit.sarimner import SarimnerModel, SarimnerProcessor, SarimnerCompiler
 from chalmers_qubit.base.operations import project_on_qubit
 from chalmers_qubit.base.gates import cczs
 
@@ -150,9 +150,17 @@ class TestTwoQubitGates(unittest.TestCase):
             1: {"frequency": 5.4, "anharmonicity": 0.3},
         }
         coupling_dict = {(0,1): 1e-3}
+        options = {
+            "dt": 0.1,  # time step in (ns)
+            "two_qubit_gate": {
+                "buffer_time": 0,
+                "rise_fall_time": 0,
+            },
+        }
         self.model = SarimnerModel(transmon_dict=transmon_dict, 
                                    coupling_dict=coupling_dict)
-        self.processor = SarimnerProcessor(model=self.model)
+        compiler = SarimnerCompiler(model=self.model, options=options)
+        self.processor = SarimnerProcessor(model=self.model, compiler=compiler)
         return super().setUp()
 
     def tearDown(self) -> None:
@@ -191,15 +199,24 @@ class TestThreeQubitGates(unittest.TestCase):
     def setUp(self) -> None:
         self.num_qubits = 3
         transmon_dict = {
-            0: {"frequency": 5.0, "anharmonicity": 0.3},
-            1: {"frequency": 5.3, "anharmonicity": 0.3},
+            0: {"frequency": 5.3, "anharmonicity": 0.3},
+            1: {"frequency": 5.1, "anharmonicity": 0.3},
             2: {"frequency": 5.2, "anharmonicity": 0.3},
         }
         coupling_dict = {(0, 1): 1e-3,
                          (0, 2): 1e-3}
+        # Compiler options
+        options = {
+            "dt": 0.1, # time step in (ns)
+            "two_qubit_gate": {
+                "buffer_time": 0,
+                "rise_fall_time": 0,
+            },
+        }
         self.model = SarimnerModel(transmon_dict=transmon_dict,
                                    coupling_dict=coupling_dict)
-        self.processor = SarimnerProcessor(model=self.model)
+        compiler = SarimnerCompiler(model=self.model, options=options)
+        self.processor = SarimnerProcessor(model=self.model, compiler=compiler)
         return super().setUp()
 
     def tearDown(self) -> None:
