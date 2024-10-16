@@ -12,43 +12,18 @@ class DecoherenceNoise(Noise):
 
     Parameters
     ----------
-    t1: list
-        Characterize the decoherence of amplitude damping for
-        each qubit.
-    t2: list
-        Characterize the decoherence of dephasing for
-        each qubit.
-    dims: list, optional
-        The dimension of the components system, the default value is
-        [3,3...,3].
-
-    Raises
-    ------
-    ValueError
-        If t1 and t2 does not have the same length.
+    # TODO fix docstring
 
     Attributes
     ----------
     num_qubits: int
         Number of qubits.
-    dims: list
-        The dimension of the components system.
-    t1: list
-        Characterize the decoherence of amplitude damping for
-        each qubit.
-    t2: list
-        Characterize the decoherence of dephasing for
-        each qubit.
+    decoherence: dict
+        Dictionary with t1 and t2 values for corresponing qubits.
     """
 
-    def __init__(self, t1:list, t2:list, dims:Optional[list]=None):
-        if len(t1) != len(t2):
-            raise ValueError("The length of t1 and t2 must be the same.")
-
-        self.num_qubits = len(t1)
-        self.dims = dims if dims is not None else [3] * self.num_qubits
-        self.t1 = t1
-        self.t2 = t2
+    def __init__(self, decoherence_dict:dict):
+        self.decoherence = decoherence_dict
 
     def get_noisy_pulses(self, dims:list, pulses:Optional[Pulse]=None, systematic_noise:Optional[Pulse]=None):
         """
@@ -74,25 +49,24 @@ class DecoherenceNoise(Noise):
         if systematic_noise is None:
             systematic_noise = Pulse(None, None, label="system")
 
-        for qu_ind in range(self.num_qubits):
-            t1 = self.t1[qu_ind]
-            t2 = self.t2[qu_ind]
+        for key, value in self.decoherence.items():
+            t1 = value["t1"]
+            t2 = value["t2"]
             if t1 is not None:
-                op = 1 / np.sqrt(t1) * destroy(dims[qu_ind])
-                systematic_noise.add_lindblad_noise(op, qu_ind, coeff=True)
+                op = 1 / np.sqrt(t1) * destroy(dims[key])
+                systematic_noise.add_lindblad_noise(op, key, coeff=True)
             if t2 is not None:
                 # Keep the total dephasing ~ exp(-t/t2)
                 if t1 is not None:
                     if 2 * t1 < t2:
                         raise ValueError(
-                            "t1={}, t2={} does not fulfill "
-                            "2*t1>t2".format(t1, t2)
+                            "t1={}, t2={} does not fulfill " "2*t1>t2".format(t1, t2)
                         )
                     T2_eff = 1.0 / (1.0 / t2 - 1.0 / 2.0 / t1)
                 else:
                     T2_eff = t2
-                op = 1 / np.sqrt(2 * T2_eff) * 2 * num(dims[qu_ind])
-                systematic_noise.add_lindblad_noise(op, qu_ind, coeff=True)
+                op = 1 / np.sqrt(2 * T2_eff) * 2 * num(dims[key])
+                systematic_noise.add_lindblad_noise(op, key, coeff=True)
         return pulses, systematic_noise
 
 
@@ -103,8 +77,8 @@ class ZZCrossTalk(Noise):
 
     Parameters
     ----------
-    cross_talk_matrix: np.ndarray
-        Cross-talk matrix where element (i,j) corresponds to the
+    cross_talk_dict: dict
+        Cross-talk dictionary where key (i,j) corresponds to the
         cross-talk strength between qubit `i` and `j`.
     dims: list, optional
         The dimension of the components system, the default value is
@@ -112,18 +86,14 @@ class ZZCrossTalk(Noise):
 
     Attributes
     ----------
-    ctm: np.ndarray
+    cross_talk_dict: dict
         Cross-talk matrix.
     num_qubits: int
         Number of qubits.
-    dims: list
-        The dimension of the components system.
     """
 
-    def __init__(self, cross_talk_matrix:np.ndarray, dims:Optional[list]=None):
-        self.ctm = cross_talk_matrix
-        self.num_qubits, _ = self.ctm.shape
-        self.dims = dims if dims is not None else [3] * self.num_qubits
+    def __init__(self, cross_talk_dict: dict):
+        self.cross_talk_dict = cross_talk_dict
 
     def get_noisy_pulses(self, dims:list, pulses:Optional[Pulse]=None, systematic_noise:Optional[Pulse]=None):
         """
@@ -150,18 +120,17 @@ class ZZCrossTalk(Noise):
         if systematic_noise is None:
             systematic_noise = Pulse(None, None, label="system")
 
-        for i in range(len(dims) - 1):
-            for j in range(i+1, len(dims)):
-                d1 = dims[i]
-                d2 = dims[j]
+        for (key1, key2), value in self.cross_talk_dict.items():
+            d1 = dims[key1]
+            d2 = dims[key2]
 
-                zz_op = tensor(num(d1), num(d2))
-                zz_coeff = self.ctm[i,j]
+            zz_op = tensor(num(d1), num(d2))
+            zz_coeff = 2*np.pi*value
 
-                systematic_noise.add_control_noise(
-                    zz_coeff * zz_op,
-                    targets=[i, j],
-                    tlist=None,
-                    coeff=True,
-                )
+            systematic_noise.add_control_noise(
+                zz_coeff * zz_op,
+                targets=[key1, key2],
+                tlist=None,
+                coeff=True,
+            )
         return pulses, systematic_noise

@@ -9,7 +9,7 @@ __all__ = ["SarimnerCompiler"]
 
 class SarimnerCompiler(GateCompiler):
     """
-    Compiler for :class:`.ChalmersQubits`.
+    Compiler for :class:`.SarimnerModel`.
     Compiled pulse strength is in the unit of GHz.
 
     Parameters
@@ -168,9 +168,9 @@ class SarimnerCompiler(GateCompiler):
         t_gate = self.single_qubit_gate_options["gate_time"]
 
         # parameters
-        alpha = self.params["alpha"][target]
-        omega_qubit = self.params["wq"][target]
-        rotating_freq = self.params["wr"][target]
+        alpha = self.params["transmons"][target]["anharmonicity"]
+        omega_qubit = self.params["transmons"][target]["frequency"]
+        rotating_freq = omega_qubit
         omega_drive = rotating_freq - omega_qubit
 
         # arguments
@@ -386,16 +386,9 @@ class SarimnerCompiler(GateCompiler):
         q1 = gate.controls[0]
         q2 = gate.targets[0]
 
-        omega1 = self.params["wq"][q1]
-        omega1_rot = self.params["wr"][q1]
-        omega2 = self.params["wq"][q2]
-        omega2_rot = self.params["wr"][q2]
-        coupling_strength = self.params["coupling_matrix"][q1,q2]
+        # Coupling strength
+        g = self.params["couplings"][q1, q2]
 
-        # Drive frequency
-        omega_d = abs(omega1 - omega2)
-        # Rotating frame detuning
-        detuning = (omega1_rot - omega2_rot)
         # Total time of gate
         t_gate = np.pi / (2 * abs(g))
         # Rise and fall time of envelope
@@ -409,17 +402,7 @@ class SarimnerCompiler(GateCompiler):
 
         coeff = self._envelope_function(tlist, t_gate, rise_fall_time, t_buffer)
 
-        args = {
-            "coupling_strength": coupling_strength,
-            "drivefreq": omega_d,
-            "detuning": detuning,
-            "phase": 0,
-        }
-
-        pulse_info = [
-            ("(xx+yy)" + str(q1) + str(q2), self._coupling(tlist, "(xx+yy)", args)),
-            ("(yx-xy)" + str(q1) + str(q2), self._coupling(tlist, "(yx-xy)", args)),
-        ]
+        pulse_info = [("iswap" + str(q1) + str(q2), coeff)]
         # ADD VIRTUAL-Z GATES TO CORRECT THE PHASE
         self.phase[q1] -= np.pi
         self.phase[q2] -= np.pi

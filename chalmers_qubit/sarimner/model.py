@@ -1,6 +1,7 @@
 import numpy as np
+from copy import deepcopy
 from typing import Optional, Union
-from qutip import destroy, tensor
+from qutip import destroy, tensor, basis
 from qutip_qip.device import Model
 
 __all__ = ["SarimnerModel"]
@@ -77,10 +78,8 @@ class SarimnerModel(Model):
         # dimension of each subsystem
         self.dims = [dim] * self.num_qubits
         self.params = {
-            "wq": self.qubit_frequencies,
-            "alpha": self.anharmonicity,
-            "wr": self.rotating_frame_frequencies,
-            "coupling_matrix": self.coupling_matrix
+            "transmons": self._parse_dict(transmon_dict),
+            "couplings": self._parse_dict(coupling_dict) if coupling_dict is not None else None,
         }
 
         # setup drift, controls an noise
@@ -127,21 +126,27 @@ class SarimnerModel(Model):
         dims = self.dims
         controls = {}
 
-        for m in range(num_qubits):
-            destroy_op = destroy(dims[m])
-            controls["x" + str(m)] = (destroy_op.dag() + destroy_op, [m])
-            controls["y" + str(m)] = (1j*(destroy_op.dag() - destroy_op), [m])
+        for key in self.params["transmons"].keys():
+            destroy_op = destroy(dims[key])
+            controls["x" + str(key)] = (destroy_op.dag() + destroy_op, [key])
+            controls["y" + str(key)] = (1j*(destroy_op.dag() - destroy_op), [key])
 
-        if self.coupling_matrix is not None:
-            # Looping through non-zero elements of the coupling matrix
-            for (m, n), value in np.ndenumerate(self.coupling_matrix):
-                if value != 0:
-                    destroy_op1 = destroy(dims[m])
-                    destroy_op2 = destroy(dims[n])
-                    op1 = tensor(destroy_op1.dag(), destroy_op2)
-                    op2 = tensor(destroy_op1, destroy_op2.dag())
-                    controls["(xx+yy)" + str(m) + str(n)] = (op1+op2, [m, n])
-                    controls["(yx-xy)" + str(m) + str(n)] = (1j*(op1-op2), [m, n])
+        if self.params["couplings"] is not None:
+            for (key1, key2), value in self.params["couplings"].items():
+                # Create basis states
+                ket01 = tensor(basis(self.dims[key1],0), basis(self.dims[key2],1))
+                ket10 = tensor(basis(self.dims[key1],1), basis(self.dims[key2],0))
+                ket11 = tensor(basis(self.dims[key1],1), basis(self.dims[key2],1))
+                ket20 = tensor(basis(self.dims[key1],2), basis(self.dims[key2],0))
+
+                g = value # coupling strength
+                iswap_op = g * (ket01*ket10.dag() + ket10*ket01.dag())
+                cz_op_real = np.sqrt(2) * g * (ket11*ket20.dag() + ket20*ket11.dag())
+                cz_op_imag = 1j * np.sqrt(2) * g * (ket11*ket20.dag() - ket20*ket11.dag())
+
+                controls["iswap" + str(key1) + str(key2)] = (iswap_op, [key1, key2])
+                controls["cz_real" + str(key1) + str(key2)] = (cz_op_real, [key1, key2])
+                controls["cz_imag" + str(key1) + str(key2)] = (cz_op_imag, [key1, key2])
 
         return controls
 
@@ -154,10 +159,8 @@ class SarimnerModel(Model):
         """
         num_qubits = self.num_qubits
         labels = [
-            {f"x{n}": r"$a_{" + f"{n}" + r"}^\dagger + a_{"
-                + f"{n}" + r"}$" for n in range(num_qubits)},
-            {f"y{n}": r"$i(a_{" + f"{n}" + r"}^\dagger - a_{"
-             + f"{n}" + r"}$)" for n in range(num_qubits)},
+            {f"x{n}": "$sx_{" + f"{n}" + "}$" for n in range(num_qubits)},
+            {f"y{n}": "$sy_{" + f"{n}" + "}$" for n in range(num_qubits)},
         ]
         label_zz = {}
 
