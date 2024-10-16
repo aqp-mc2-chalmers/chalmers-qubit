@@ -47,27 +47,38 @@ from chalmers_qubit.sarimner import (
     ZZCrossTalk,
 )
 
-# Define a circuit
+# Define a quantum circuit
 qc = QubitCircuit(2)
 qc.add_gate("RX", targets=0, arg_value=np.pi / 2)
 qc.add_gate("RY", targets=1, arg_value=np.pi / 2)
 qc.add_gate("CZ", controls=0, targets=1)
 
-# Define a Model with model parameters
 # All frequencies are defined in GHz, and times in ns.
-model = SarimnerModel(
-    qubit_frequencies=[2 * np.pi * 5.0, 2 * np.pi * 5.4],
-    anharmonicities=[-2 * np.pi * 0.3, -2 * np.pi * 0.3],
-    coupling_matrix=np.array([[0, 1e-4], [0, 0]]),
-)
+transmon_dict = {
+    0: {"frequency": 5.0, "anharmonicity": -0.30},
+    1: {"frequency": 5.4, "anharmonicity": -0.30},
+}
+coupling_dict = {
+    (0, 1): 0.04,
+}
+# Construct model
+model = SarimnerModel(transmon_dict=transmon_dict,
+                      coupling_dict=coupling_dict)
 
 # Load a compiler
 compiler = SarimnerCompiler(model=model)
 
 # Define all the noise objects as a list.
+decoherence_dict = {
+    0: {"t1": 60e3, "t2": 80e3},
+    1: {"t1": 100e3, "t2": 105e3},
+}
+cross_talk_dict = {
+    (0, 1): 1e-4,
+}
 noise = [
-    DecoherenceNoise(t1=[60 * 1e3, 70 * 1e3], t2=[100 * 1e3, 120 * 1e3]),
-    ZZCrossTalk(cross_talk_matrix=np.array([[0, 1e-4], [0, 0]])),
+    DecoherenceNoise(decoherence_dict=decoherence_dict),
+    ZZCrossTalk(cross_talk_dict=cross_talk_dict),
 ]
 
 # Initialize the processor
@@ -89,7 +100,7 @@ result = processor.run_state(init_state, solver="mcsolve", ntraj=100)
 print("Final state", result.states[-1])
 ```
 
-It is also possible to import QASM circuits.
+It is also possible to import [QASM circuits](https://nbviewer.org/urls/qutip.org/qutip-tutorials/tutorials-v5/quantum-circuits/qasm.ipynb).
 
 ## Development
 
