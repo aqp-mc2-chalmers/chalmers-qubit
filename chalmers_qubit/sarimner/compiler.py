@@ -10,31 +10,41 @@ __all__ = ["SarimnerCompiler"]
 class SarimnerCompiler(GateCompiler):
     """
     Compiler for :class:`.SarimnerModel`.
-    Compiled pulse strength is in the unit of GHz.
+    Frequencies are the unit of GHz and times in ns.
 
     Parameters
     ----------
-    model: Model
-        model object of the superconducting qubit device with hardware parameters
+    model : Model
+        Model object of the superconducting qubit device with hardware parameters.
+    options : Optional[dict], optional
+        A dictionary of compiler options. If not provided, default options will be used.
 
     Attributes
     ----------
-    num_qubits: int
-        The number of the component systems.
-
-    params: dict
-        A Python dictionary contains the name and the value of the parameters,
-        such as qubit frequency, anharmonicity etc.
-
-    gate_compiler: dict
-        The Python dictionary in the form of {gate_name: decompose_function}.
-        It saves the decomposition scheme for each gate.
-
-    phase: list
-        List with values of how much we have virtually rotated the Bloch sphere of each qubit.
-
-    global_phase: float
+    num_qubits : int
+        The number of component systems (qubits).
+    params : dict
+        A Python dictionary containing the name and value of hardware parameters,
+        such as qubit frequency, anharmonicity, etc.
+    gate_compiler : dict
+        A Python dictionary in the form of {gate_name: decompose_function}.
+        It stores the decomposition scheme for each supported gate.
+    phase : list
+        List of values indicating how much we have virtually rotated the Bloch sphere of each qubit.
+    global_phase : float
         The global phase of the quantum state.
+    dt : float
+        Time step in nanoseconds.
+    two_qubit_gate_options : dict
+        Options specific to two-qubit gates, including buffer_time and rise_fall_time.
+    single_qubit_gate_options : dict
+        Options specific to single-qubit gates, including type, gate_time, amplitude, and std.
+
+    Notes
+    -----
+    The compiler supports various gates including RZ, RX, RY, X, H, CZ, ISWAP, CCZS, IDLE, and GLOBALPHASE.
+    Default options are provided for dt, two-qubit gates, and single-qubit gates, which can be overridden
+    by passing custom options during initialization.
     """
 
     def __init__(self, model: Model, options: Optional[dict] = None):

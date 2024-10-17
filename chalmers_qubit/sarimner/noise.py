@@ -6,20 +6,39 @@ from qutip_qip.noise import Noise
 
 __all__ = ["DecoherenceNoise", "ZZCrossTalk"]
 
+
 class DecoherenceNoise(Noise):
     """
-    The decoherence on each qubit characterized by two time scales t1 and t2.
+    Represents decoherence noise in a quantum system, characterized by T1 and T2 times for each qubit.
+
+    This class models the decoherence effects on qubits in a quantum system. It allows for
+    specifying individual T1 (relaxation) and T2 (dephasing) times for each qubit in the system.
 
     Parameters
     ----------
-    # TODO fix docstring
+    decoherence_dict : dict
+        A dictionary specifying the decoherence parameters for each qubit. The keys should be
+        qubit identifiers, and the values should be dictionaries containing 't1' and 't2' keys
+        with their respective time values in nanoseconds.
 
     Attributes
     ----------
-    num_qubits: int
-        Number of qubits.
-    decoherence: dict
-        Dictionary with t1 and t2 values for corresponing qubits.
+    decoherence : dict
+        A dictionary storing the T1 and T2 values for each qubit in the system.
+
+    Examples
+    --------
+    >>> decoherence_dict = {
+    ...     0: {'t1': 50e3, 't2': 70e3}, # values for the 0th qubit
+    ...     1: {'t1': 45e3, 't2': 60e3} # values for the 1st qubit
+    ... }
+    >>> noise = [DecoherenceNoise(decoherence_dict)]
+
+    Notes
+    -----
+    - T1 represents the relaxation time, which characterizes the time scale for energy dissipation.
+    - T2 represents the dephasing time, which characterizes the time scale for loss of phase coherence.
+    - T2 is always less than or equal to 2*T1.
     """
 
     def __init__(self, decoherence_dict:dict):
@@ -72,24 +91,35 @@ class DecoherenceNoise(Noise):
 
 class ZZCrossTalk(Noise):
     """
-    An always-on ZZ cross talk noise with the corresponding coefficient
-    on each pair of qubits.
+    A noise model representing always-on ZZ cross talk between qubits,
+    characterized by a cross-talk coefficient for each pair of qubits.
 
     Parameters
     ----------
-    cross_talk_dict: dict
-        Cross-talk dictionary where key (i,j) corresponds to the
-        cross-talk strength between qubit `i` and `j`.
-    dims: list, optional
-        The dimension of the components system, the default value is
-        [3,3...,3].
+    cross_talk_dict : dict
+        A dictionary specifying the cross-talk strength between qubits.
+        The keys are tuples (i, j), where `i` and `j` are qubit indices,
+        and the corresponding value is the ZZ interaction strength
+        between qubit `i` and qubit `j`.
 
     Attributes
     ----------
-    cross_talk_dict: dict
-        Cross-talk matrix.
-    num_qubits: int
-        Number of qubits.
+    cross_talk_dict : dict
+        A dictionary representing the ZZ cross-talk interaction strengths
+        between qubit pairs.
+
+    Notes
+    -----
+    - This model assumes that cross talk is always on, meaning it
+      continuously affects the qubits throughout their operation.
+
+    Example
+    -------
+    >>> cross_talk_dict = {
+    ...     (0, 1): 0.01,  # ZZ interaction strength between qubit 0 and qubit 1
+    ...     (1, 2): 0.02,  # ZZ interaction strength between qubit 1 and qubit 2
+    ... }
+    >>> noise = [ZZCrossTalk(cross_talk)]
     """
 
     def __init__(self, cross_talk_dict: dict):

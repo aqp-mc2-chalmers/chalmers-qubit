@@ -9,69 +9,52 @@ __all__ = ["SarimnerModel"]
 
 class SarimnerModel(Model):
     """
-    Initializes a new quantum system simulation configuration.
+    Initializes a new quantum system simulation configuration for the Sarimner model.
 
-    This method sets up the essential parameters and defaults needed for simulating a quantum system
-    with specified qubit characteristics and interactions. It also initializes the internal state
-    required for managing the system's dynamics, such as drift and controls, and prepares an empty noise
-    model.
+    This class sets up the essential parameters and structure needed for simulating a quantum system
+    with specified transmon qubit characteristics and couplings. It initializes the internal state
+    required for managing the system's dynamics, including drift and controls.
 
     Parameters
     ----------
-    qubit_frequencies : list of float
-        Frequencies of each qubit in GHz, defining the energy level spacings.
-    anharmonicities : list of float
-        Anharmonicities of each qubit in GHz, indicating the deviation from harmonic oscillator behavior.
-    rotating_frame_frequencies : list of float, optional
-        Frequencies defining the rotating frame for each qubit. Defaults to the frequencies of the qubits
-        themselves if not provided.
-    coupling_matrix : np.ndarray or int, optional
-        Coupling matrix between qubits. If an integer is provided, it initializes a matrix filled with this
-        integer in the upper triangular part. If not provided, the coupling effect is considered absent.
-    dims : list of int, optional
-        Dimensions for the state space of each qubit, defaulting to three levels (qutrits) per qubit if not specified.
-
-    Raises
-    ------
-    ValueError
-        If the lengths of `anharmonicities` does not match the number of qubits.
-        If `coupling_matrix` is provided but is neither an integer nor a numpy.ndarray.
+    transmon_dict : dict
+        A dictionary containing the parameters for each transmon qubit. The keys are qubit
+        identifiers, and the values are dictionaries with qubit properties (e.g., frequency,
+        anharmonicity).
+    coupling_dict : Optional[dict], default=None
+        A dictionary specifying the couplings between qubits. If None, no couplings are considered.
+    dim : int, default=3
+        The dimension of the Hilbert space for each qubit (default is 3 for qutrit).
 
     Attributes
     ----------
     num_qubits : int
-        Number of qubits.
-    qubit_frequencies : list of float
-        Qubit frequencies stored.
-    anharmonicities : list of float
-        Stored anharmonicities of each qubit.
-    rotating_frame_frequencies : list of float
-        Rotating frame frequencies used.
-    coupling_matrix : np.ndarray
-        Coupling matrix used for the simulation.
+        The number of qubits in the system.
     dims : list of int
-        Dimensions of each qubit's state space.
-    spline_kind : str, optional
-        Type of the coefficient interpolation. Default is "step_func"
-        Note that they have different requirements for the length of ``coeff``.
-
-        -"step_func":
-        The coefficient will be treated as a step function.
-        E.g. ``tlist=[0,1,2]`` and ``coeff=[3,2]``, means that the coefficient
-        is 3 in t=[0,1) and 2 in t=[1,2). It requires
-        ``len(coeff)=len(tlist)-1`` or ``len(coeff)=len(tlist)``, but
-        in the second case the last element of ``coeff`` has no effect.
-
-        -"cubic": Use cubic interpolation for the coefficient. It requires
-        ``len(coeff)=len(tlist)``
+        A list specifying the dimension of each qubit's Hilbert space.
     params : dict
-        Dictionary holding system parameters for easy access.
+        A dictionary containing all system parameters, including transmon properties and couplings.
     _drift : list
-        Internal representation of the system's drift.
+        Internal representation of the system's drift Hamiltonian.
     _controls : dict
-        Internal setup for system controls.
+        Internal setup for system control Hamiltonians.
     _noise : list
-        List initialized for adding noise models.
+        An empty list initialized for potential future addition of noise models.
+
+    Methods
+    -------
+    _parse_dict(input_dict: dict) -> dict
+        Internal method to parse and validate input dictionaries.
+    _set_up_drift() -> list
+        Internal method to set up the drift Hamiltonian.
+    _set_up_controls() -> dict
+        Internal method to set up the control Hamiltonians.
+
+    Notes
+    -----
+    - The `transmon_dict` should contain parameters for each qubit, such as frequency and anharmonicity.
+    - The `coupling_dict`, if provided, should specify the coupling strengths between qubit pairs.
+    - The model uses a fixed dimension (`dim`) for all qubits, defaulting to qutrit (3-level) systems.
     """
     def __init__(self, transmon_dict: dict, coupling_dict: Optional[dict] = None, dim: int = 3):
         self.num_qubits = int(len(transmon_dict))

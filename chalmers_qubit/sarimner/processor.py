@@ -12,6 +12,7 @@ from qutip_qip.compiler import GateCompiler
 
 from chalmers_qubit.sarimner.compiler import SarimnerCompiler
 
+
 class SarimnerProcessor(Processor):
     """
     Initialize a new SarimnerProcessor instance with a quantum model, an optional compiler, and noise models.
@@ -42,9 +43,9 @@ class SarimnerProcessor(Processor):
     """
 
     def __init__(self,
-                 model:Model,
-                 compiler:Optional[GateCompiler] = None,
-                 noise:Optional[list] = None):
+                 model: Model,
+                 compiler: Optional[GateCompiler] = None,
+                 noise: Optional[list] = None):
 
         self.model = model
 
@@ -62,7 +63,7 @@ class SarimnerProcessor(Processor):
         self.spline_kind = "cubic"
         self.global_phase = 0
 
-    def load_circuit(self, qc:QubitCircuit, schedule_mode:str="ASAP", compiler:Optional[GateCompiler]=None):
+    def load_circuit(self, qc: QubitCircuit, schedule_mode: str = "ASAP", compiler: Optional[GateCompiler] = None):
         """
         The default routine of compilation.
         It first calls the :meth:`.transpile` to convert the circuit to
@@ -108,19 +109,19 @@ class SarimnerProcessor(Processor):
         return tlist, coeffs
 
     def run_state(
-        self,
-        init_state=None,
-        analytical=False,
-        states=None,
-        noisy=True,
-        solver="mesolve",
-        qc=None,
-        **kwargs):
+            self,
+            init_state=None,
+            analytical=False,
+            states=None,
+            noisy=True,
+            solver="mesolve",
+            qc=None,
+            **kwargs):
         if qc is not None:
             self.load_circuit(qc)
-        return super().run_state(init_state,analytical,states,noisy,solver,**kwargs)
+        return super().run_state(init_state, analytical, states, noisy, solver, **kwargs)
 
-    def run_propagator(self, qc:Optional[QubitCircuit]=None, noisy:bool=False, **kwargs):
+    def run_propagator(self, qc: Optional[QubitCircuit] = None, noisy: bool = False, **kwargs):
         """
         Parameters
         ----------
@@ -161,7 +162,7 @@ class SarimnerProcessor(Processor):
             tlist = self.get_full_tlist()
             if tlist is None:
                 raise ValueError("tlist is None.")
-            else: 
+            else:
                 t = tlist[-1]
 
         options = kwargs.get("options", qutip.Options())
@@ -176,15 +177,15 @@ class SarimnerProcessor(Processor):
         return prop
 
     def plot_pulses(
-        self,
-        title=None,
-        figsize=(12, 6),
-        dpi=None,
-        show_axis=False,
-        rescale_pulse_coeffs=True,
-        num_steps=1000,
-        pulse_labels=None,
-        use_control_latex=True,
+            self,
+            title=None,
+            figsize=(12, 6),
+            dpi=None,
+            show_axis=False,
+            rescale_pulse_coeffs=True,
+            num_steps=1000,
+            pulse_labels=None,
+            use_control_latex=True,
     ):
         """
         Plot the ideal pulse coefficients.
@@ -305,7 +306,7 @@ class SarimnerProcessor(Processor):
                         coeff = _pulse_interpolate(pulse, tlist)
                 except KeyError:
                     coeff = np.zeros(tlist.shape)
-                if ~np.all(coeff == 0): # only plot pulse if it is non-zero
+                if ~np.all(coeff == 0):  # only plot pulse if it is non-zero
                     grid = grids[pulse_ind]
                     ax = plt.subplot(grid)
                     axis.append(ax)
