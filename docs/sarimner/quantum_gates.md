@@ -93,19 +93,18 @@ circuit = QubitCircuit(1)
 circuit.add_gate("RX", targets=0, arg_value=np.pi/2)
 
 # Qubit frequencies in (GHz)
-qubit_frequencies = [2 * np.pi * 5.0]
-# Anharmonicity in (GHz)
-anharmonicities = [- 2 * np.pi * 0.3]
+transmon_dict = {
+    0: {"frequency": 5.0, "anharmonicity": -0.30},
+}
 
 # Load the physical parameters onto the model
-model = SarimnerModel(qubit_frequencies=qubit_frequencies, 
-                      anharmonicities=anharmonicities)
+model = SarimnerModel(transmon_dict=transmon_dict)
 
 # Choose compiler
 compiler = SarimnerCompiler(model=model)
 
 # Create the processor with the given hardware parameters
-sarimner = SarimnerProcessor(model=model, compiler=compiler, noise=[])
+sarimner = SarimnerProcessor(model=model, compiler=compiler)
 
 # Load circuit
 tlist, coeffs = sarimner.load_circuit(circuit)
@@ -116,6 +115,22 @@ plt.xlabel("Time (ns)")
 ```
 
 ![Drag Pulse](figures/drag.png "drag")
+
+Currently only Gaussian pulses are available for single-qubit gates, but cosine pulses are soon going to be implemented as well. To configure the Gaussian pulse, such as, amplitude, standard deviation, and gate-time, the following options can be suppied to the `SarimnerCompiler`
+
+```py
+# Options for compiler
+options = {
+    "dt": 0.1, # time-step of simulator in (ns)
+    "single_qubit_gate": { # the following are the default values
+        "type": "gaussian",
+        "gate_time": 50, # in (ns)
+        "amplitude": 0.12533148558448476,
+        "std": 5,  # in (ns)
+    },
+}
+compiler = SarimnerCompiler(options=options)
+```
 
 ### Virtual Z-gate
 To implement the $R_Z(\theta)$-gate, we include a phase $\phi$ to our drive
@@ -149,19 +164,18 @@ circuit = QubitCircuit(1)
 circuit.add_gate("H", targets=0)
 
 # Qubit frequencies in (GHz)
-qubit_frequencies = [2 * np.pi * 5.0]
-# Anharmonicity in (GHz)
-anharmonicities = [- 2 * np.pi * 0.3]
+transmon_dict = {
+    0: {"frequency": 5.0, "anharmonicity": -0.30},
+}
 
 # Load the physical parameters onto the model
-model = SarimnerModel(qubit_frequencies=qubit_frequencies, 
-                      anharmonicities=anharmonicities)
+model = SarimnerModel(transmon_dict=transmon_dict)
 
 # Choose compiler
 compiler = SarimnerCompiler(model=model)
 
 # Create the processor with the given hardware parameters
-sarimner = SarimnerProcessor(model=model, compiler=compiler, noise=[])
+sarimner = SarimnerProcessor(model=model, compiler=compiler)
 
 # Load circuit
 tlist, coeffs = sarimner.load_circuit(circuit)
@@ -191,125 +205,42 @@ print(phase_corrected_state)
 
 ## Multi-qubit gates
 
-Two-qubit gates between two qubits labeled $i$ and $j$ are performed using a time-dependent coupling term of the form 
+### ISWAP-gate
+The ISWAP-gate between two qubits are performed using a time-dependent coupling term of the form 
 
 \begin{equation}
-    \frac{H_\mathrm{coupling}(t)}{\hbar} =  g(t)(a^\dagger_ia_j+a_ia^\dagger_j),
+    \frac{H_\mathrm{coupling}(t)}{\hbar} =  g(t)(\ket{10}\bra{01}+\ket{01}\bra{10}),
 \end{equation}
 
-where the time-dependent coupling term is given by
+where the time-dependent coupling term $g(t)$ is given by a step-function with amplitude $g$ and sinusodial rise-and-fall time. The gate time for the ISWAP-gate is dependent on the coupling strength $g$ as:
 
 \begin{equation}
-    g(t) = g_0 \cos(\omega_d t + \phi),
+    t_\mathrm{gate} = \frac{1}{4g}
 \end{equation}
-
-where $\omega_d$ is the driving frequency, and $g_0$ is the amplitude, and $\phi$ is a phase. The drive-frequency is choosen to be the transition frequency for the corresponding gate, for example $\omega_d=\omega_1-\omega_2$ for the ISWAP-gate and $\omega_d=\omega_1+\alpha_1-\omega_2$ for the CZ-gate.
-<!--
-Since we are working in the rotating frame 
-
-\begin{equation}
-U^R(t) = e^{i(\omega_{r_i}a^\dagger_ia_i+\omega_{r_j}a^\dagger_ja_j)t}
-\end{equation}
-
-the coupling Hamiltonian in the rotating frame reads
-
-\begin{align}
-    \frac{H^R_\mathrm{coupling}(t)}{\hbar} =  g(t)(a^\dagger_ia_je^{i\Delta_{ij}t}+a_ia^\dagger_je^{-i\Delta_{ij}t}),
-\end{align}
-
-where $\Delta_{ij} \equiv \omega_{r_i}-\omega_{r_j}$ is the difference in rotating frame frequency between qubit $i$ and $j$. By writing the exponentials on trigonometric form and seperating the real and imaginary part, the coupling term can be written as
-
-\begin{align}
-    \frac{H^R_\mathrm{coupling}(t)}{\hbar} =  g(t) \Big[(a^\dagger_ia_j + a_i a_j^\dagger)\cos(\Delta_{ij}t) + i(a^\dagger_ia_j - a_i a_j^\dagger)\sin(\Delta_{ij}t)\Big]
-\end{align}
-
-If we treat the Hamiltonian as an effective two level system and make the replacement 
-
-\begin{align}
-    (a^\dagger_i a_j + a_ia^\dagger_j) &\rightarrow (\sigma^x_i\sigma^x_j + \sigma^y_i\sigma^y_j)/2 = \sigma^-_i\sigma^+_j + \sigma^+_i\sigma^-_j
-    \\
-    i(a^\dagger_i a_j - a_ia^\dagger_j)&\rightarrow (\sigma^y_i\sigma^x_j - \sigma^x_i\sigma^y_j) / 2 = i(\sigma^-_i\sigma^+_j - \sigma^+_i\sigma^-_j)
-\end{align}
-
-we obtain
-
-\begin{equation}
-    \frac{H^R_\mathrm{coupling}(t)}{\hbar} = \frac{g(t)}{2} \Big[(\sigma^x_i\sigma^x_j + \sigma^y_i\sigma^y_j)\cos(\Delta_{ij}t) + (\sigma^y_i\sigma^x_j - \sigma^x_i\sigma^y_j)\sin(\Delta_{ij}t)\Big].
-\end{equation}
-
-Plugging this into a symbolic program, like mathematica, one gets
-
-\begin{equation}
-    \begin{pmatrix}
-    1 & 0 & 0 & 0 \\
-    0 & \cos(2\sqrt{\alpha^2+\beta^2}) & (-\beta-i\alpha)\frac{\sin(2\sqrt{\alpha^2+\beta^2})}{\sqrt{\alpha^2+\beta^2}} & 0 \\
-    0 & (\beta-i\alpha)\frac{\sin(2\sqrt{\alpha^2+\beta^2})}{\sqrt{\alpha^2+\beta^2}} & \cos(2\sqrt{\alpha^2+\beta^2}) & 0 \\
-    0 & 0 & 0 & 1 \\
-    \end{pmatrix}
-\end{equation}
-
-where 
-
----
-
-If we choose the rotating frame frequency for the two qubits to be the same ($\Delta_{ij}=0$) we get
-
-\begin{equation}
-    \frac{H_\mathrm{coupling}(t)}{\hbar} = \frac{g(t)}{2}(\sigma^x_i\sigma^x_j + \sigma^y_i\sigma^y_j).
-\end{equation}
-
-The evolution operator given by this Hamiltonian can analytically be found to be
-
-\begin{equation}
-    \exp(-i\int_0^t \frac{g(t')}{2}(\sigma^x_i\sigma^x_j + \sigma^y_i\sigma^y_j) \dd{t'}) = 
-    \begin{pmatrix}
-    1 & 0 & 0 & 0 \\
-    0 & \cos\theta & -i\sin\theta & 0 \\
-    0 & -i\sin\theta & \cos\theta & 0 \\
-    0 & 0 & 0 & 1 \\
-    \end{pmatrix}
-\end{equation}
-
-where 
-
-\begin{equation}
-    \theta \equiv \frac{1}{2}\int_0^t g(t')\dd{t}' = \frac{g_0}{2}\int_0^t \cos(\omega_d t' + \phi) \dd{t}'.
-\end{equation}
-
-Hence we see that when $\theta=\pi/2$ which corresponds to $t=1/\omega_d\arcsin(\pi\omega_d/g_0)-\phi$ the ISWAP-gate is realized.
--->
-
 
 #### Example
-To following example shows the execution of a CZ-gate.
+To following example shows the execution of a ISWAP-gate.
 ```py
 # Define a circuit and run the simulation
 num_qubits = 2
 circuit = QubitCircuit(num_qubits)
-circuit.add_gate("CZ", controls=0, targets=1)
+circuit.add_gate("ISWAP", controls=0, targets=1)
 
 # Qubit frequencies in (GHz)
-qubit_frequencies = [2 * np.pi * 5.0, 2 * np.pi * 5.4]
-# Anharmonicity in (GHz)
-anharmonicities = [- 2 * np.pi * 0.3, - 2 * np.pi * 0.3]
-# T1's and T2's for the qubits in (ns)
-t1 = [60 * 1e3, 80 * 1e3]
-t2 = [100 * 1e3, 105 * 1e3]
-
-# Time of CZ-gate
+transmon_dict = {
+    0: {"frequency": 5.0, "anharmonicity": -0.30},
+    1: {"frequency": 5.4, "anharmonicity": -0.30},
+}
+# Time of ISWAP-gate in (ns)
 t = 100
-# corresponding coupling
-g = np.sqrt(2) * np.pi / t
-# Coupling matrix
-coupling_matrix = np.array([[0, g],
-                            [0, 0]])
+# Calculate corresponding coupling strength
+g = 1 / (4 * t)
+coupling_dict = {
+    (0, 1): g,
+}
 
 # Load the physical parameters onto the model
-model = SarimnerModel(
-    qubit_frequencies=qubit_frequencies,
-    anharmonicities=anharmonicities,
-    coupling_matrix=coupling_matrix,
-)
+model = SarimnerModel(transmon_dict=transmon_dict, coupling_dict=coupling_dict)
 
 # Choose compiler
 compiler = SarimnerCompiler(model=model)
@@ -321,5 +252,85 @@ tlist, coeffs = sarimner.load_circuit(circuit)
 
 sarimner.plot_pulses(show_axis=True);
 ```
+![ISWAP](figures/iswap.png "iswap")
 
-![CZ](figures/cz.png "cz")
+To see that the ISWAP-gate is implemented correctly we will now simulate the circuit using the master equation simulation and look at the expectation values of the $|01\rangle$ and $|10\rangle$ states.
+
+```py
+ket01 = tensor(basis(3,0), basis(3,1))
+ket10 = tensor(basis(3,1), basis(3,0))
+# List of operators we wanna compute the expectation value for during the simulation
+e_ops = [ket2dm(ket01), ket2dm(ket10)]
+result = sarimner.run_state(ket01, e_ops=e_ops)
+```
+
+and then plot the results
+
+```py
+import matplotlib.pyplot as plt
+plt.plot(result.times, result.expect[0], label="01")
+plt.plot(result.times, result.expect[1], label="10")
+plt.xlabel('Time (ns)')
+plt.ylabel('Population')
+plt.legend()
+```
+
+![ISWAP population transfer](figures/iswap_pop.png "iswap_pop")
+
+The pulse $g(t)$ can moreover be configured to include a rise-and-fall time as well as a buffer time. To include this we can supply options to the `SarimnerCompiler`
+
+```py
+# Define a circuit and run the simulation
+num_qubits = 2
+circuit = QubitCircuit(num_qubits)
+circuit.add_gate("ISWAP", controls=0, targets=1)
+
+# Qubit frequencies in (GHz)
+transmon_dict = {
+    0: {"frequency": 5.0, "anharmonicity": -0.30},
+    1: {"frequency": 5.4, "anharmonicity": -0.30},
+}
+# Time of ISWAP-gate in (ns)
+t = 100
+# Calculate corresponding coupling strength
+g = 1 / (4 * t)
+coupling_dict = {
+    (0, 1): g,
+}
+
+# Load the physical parameters onto the model
+model = SarimnerModel(transmon_dict=transmon_dict, coupling_dict=coupling_dict)
+
+# Options for compiler
+options = {
+    "two_qubit_gate": {
+        "buffer_time": 5, # in (ns)
+        "rise_fall_time": 10, # in (ns)
+    },
+}
+
+# Choose compiler
+compiler = SarimnerCompiler(model=model, options=options)
+
+# Create the processor with the given hardware parameters
+sarimner = SarimnerProcessor(model=model, compiler=compiler)
+
+tlist, coeffs = sarimner.load_circuit(circuit)
+
+sarimner.plot_pulses(show_axis=True);
+```
+
+![ISWAP buffer](figures/iswap_buffer.png "iswap_buffer")
+
+### CZ-gate
+The CZ-gate between two qubits are performed using a time-dependent coupling term of the form 
+
+\begin{equation}
+    \frac{H_\mathrm{coupling}(t)}{\hbar} =  g(t)(\ket{20}\bra{11}+\ket{11}\bra{20}).
+\end{equation}
+
+where the time-dependent coupling term $g(t)$ is given by a step-function with amplitude $g$ and sinusodial rise-and-fall time. The gate time is in this case given by
+
+\begin{equation}
+    t_\mathrm{gate} = \frac{1}{\sqrt{2}2g}.
+\end{equation}

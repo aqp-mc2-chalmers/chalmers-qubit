@@ -6,10 +6,10 @@ repo_name: "aqp-mc2-chalmers/chalmers-qubit"
 nav:
 - Introduction:
   - Overview: index.md
-- Sarimner:
-  - Model: transmons.md
-  - Quantum Gates: quantum_gates.md
-  - Noise: noise.md
+- Simulator:
+  - Model: sarimner/transmons.md
+  - Quantum Gates: sarimner/quantum_gates.md
+  - Noise: sarimner/noise.md
 - API Documentation: reference.md
 
 theme:
@@ -48,8 +48,8 @@ theme:
     - search.suggest
     - search.highlight
     - content.tabs.link
-    - navigation.footer
     - navigation.indexes
+    - navigation.expand
     - navigation.sections
     - navigation.tabs
     - navigation.tabs.sticky
