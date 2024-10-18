@@ -110,6 +110,6 @@ The [tutorials](https://qutip.org/qutip-tutorials/) show examples of how to cust
 
 ## Support
 
-This package was built from contributions by Pontus Vikstål, Kamanasish Debnath and Shahnawaz Ahmed.
+This package was built from contributions by Pontus Vikstål and Shahnawaz Ahmed.
 
 Contact vikstal@chalmers.se, shahnawaz.ahmed95@gmail.com or anton.frisk.kockum@chalmers.se for help and support.
