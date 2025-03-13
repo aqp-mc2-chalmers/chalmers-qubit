@@ -26,13 +26,15 @@ class DecoherenceNoise(Noise):
     decoherence : dict
         A dictionary storing the T1 and T2 values for each qubit in the system.
 
-    Examples
-    --------
-    >>> decoherence_dict = {
-    ...     0: {'t1': 50e3, 't2': 70e3}, # values for the 0th qubit
-    ...     1: {'t1': 45e3, 't2': 60e3} # values for the 1st qubit
-    ... }
-    >>> noise = [DecoherenceNoise(decoherence_dict)]
+    Example
+    -------
+    ```python
+    decoherence_dict = {
+        0: {'t1': 50e3, 't2': 70e3}, # values for the 0th qubit
+        1: {'t1': 45e3, 't2': 60e3} # values for the 1st qubit
+    }
+    noise = [DecoherenceNoise(decoherence_dict)]
+    ```
 
     Notes
     -----
@@ -115,11 +117,13 @@ class ZZCrossTalk(Noise):
 
     Example
     -------
-    >>> cross_talk_dict = {
-    ...     (0, 1): 0.01,  # ZZ interaction strength between qubit 0 and qubit 1
-    ...     (1, 2): 0.02,  # ZZ interaction strength between qubit 1 and qubit 2
-    ... }
-    >>> noise = [ZZCrossTalk(cross_talk)]
+    ```python	
+    cross_talk_dict = {
+        (0, 1): 0.01,  # ZZ interaction strength between qubit 0 and qubit 1
+        (1, 2): 0.02,  # ZZ interaction strength between qubit 1 and qubit 2
+    }
+    noise = [ZZCrossTalk(cross_talk)]
+    ```
     """
 
     def __init__(self, cross_talk_dict: dict):
