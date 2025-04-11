@@ -32,4 +32,4 @@ model = SarimnerModel(transmon_dict=transmon_dict)
 ```
 This code defines qubit frequencies and anharmonicities for a single qubit system (N=1) and creates a `SarimnerModel` object to represent the physical system. 
 
-All simulations are performed in the rotating frame of the individual qubits.
+**Note:** All simulations are performed in the rotating frame of the individual qubits.
