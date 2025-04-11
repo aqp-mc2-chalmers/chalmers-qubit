@@ -38,7 +38,7 @@ class SarimnerCompiler(GateCompiler):
     two_qubit_gate_options : dict
         Options specific to two-qubit gates, including buffer_time and rise_fall_time.
     single_qubit_gate_options : dict
-        Options specific to single-qubit gates, including type, gate_time, amplitude, and std.
+        Options specific to single-qubit gates, including type, gate_time, pi-pulse amplitude, and std.
 
     Notes
     -----
@@ -77,7 +77,7 @@ class SarimnerCompiler(GateCompiler):
             "single_qubit_gate": {
                 "type": "gaussian",
                 "gate_time": 50,  # in (ns)
-                "amplitude": 0.12533148558448476,
+                "pi_pulse_amplitude": 0.12533148558448476,
                 "std": 5,  # in (ns)
             },
         }
@@ -174,7 +174,7 @@ class SarimnerCompiler(GateCompiler):
 
         # Use the parsed options for single qubit gates
         sigma = self.single_qubit_gate_options["std"]
-        amp = self.single_qubit_gate_options["amplitude"] * gate.arg_value / np.pi
+        amp = self.single_qubit_gate_options["pi_pulse_amplitude"] * gate.arg_value / np.pi
         t_gate = self.single_qubit_gate_options["gate_time"]
 
         # parameters
