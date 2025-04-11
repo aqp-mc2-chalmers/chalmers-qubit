@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "v*.*.*" # Triggers when tags like v1.2.3 are pushed
+  workflow_dispatch:
 
 jobs:
   deploy:
