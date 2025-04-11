@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://aqp-mc2-chalmers.github.io/chalmers-qubit/</loc>
+         <lastmod>2025-04-11</lastmod>
+    </url>
+    <url>
+         <loc>https://aqp-mc2-chalmers.github.io/chalmers-qubit/reference/</loc>
+         <lastmod>2025-04-11</lastmod>
+    </url>
+    <url>
+         <loc>https://aqp-mc2-chalmers.github.io/chalmers-qubit/examples/comparison_of_coherence_limits/</loc>
+         <lastmod>2025-04-11</lastmod>
+    </url>
+    <url>
+         <loc>https://aqp-mc2-chalmers.github.io/chalmers-qubit/examples/quantum_gates/</loc>
+         <lastmod>2025-04-11</lastmod>
+    </url>
+    <url>
+         <loc>https://aqp-mc2-chalmers.github.io/chalmers-qubit/examples/relaxation/</loc>
+         <lastmod>2025-04-11</lastmod>
+    </url>
+    <url>
+         <loc>https://aqp-mc2-chalmers.github.io/chalmers-qubit/sarimner/noise/</loc>
+         <lastmod>2025-04-11</lastmod>
+    </url>
+    <url>
+         <loc>https://aqp-mc2-chalmers.github.io/chalmers-qubit/sarimner/quantum_gates/</loc>
+         <lastmod>2025-04-11</lastmod>
+    </url>
+    <url>
+         <loc>https://aqp-mc2-chalmers.github.io/chalmers-qubit/sarimner/transmons/</loc>
+         <lastmod>2025-04-11</lastmod>
+    </url>
+</urlset>
