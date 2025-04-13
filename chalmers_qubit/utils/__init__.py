@@ -1,2 +1,2 @@
 # chalmers_qubit/utils/__init__.py
-from .randomized_benchmarking import randomized_benchmarking_sequence
+from .randomized_benchmarking import *
