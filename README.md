@@ -33,7 +33,7 @@ The usage of the package follows [qutip-qip](https://qutip-qip.readthedocs.io/en
 
 Note that only gates with compilation instructions in `chalmers_qubit/sarimner/compiler.py` will work for this particular processor.
 
-Notebooks exploring the usage of the simulator is available in `examples/`. 
+Notebooks exploring the usage of the simulator is available in `docs/examples/`. 
 
 ``` python
 import numpy as np
