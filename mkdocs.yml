@@ -10,6 +10,10 @@ nav:
   - Model: sarimner/transmons.md
   - Quantum Gates: sarimner/quantum_gates.md
   - Noise: sarimner/noise.md
+- Tutorials:
+  - Quantum Gates: examples/quantum_gates.ipynb
+  - Relaxation: examples/relaxation.ipynb
+  - Comparison of coherence limits: examples/comparison_of_coherence_limits.ipynb
 - API Documentation: reference.md
 
 theme:
@@ -58,6 +62,7 @@ theme:
 
 plugins:
   - search
+  - mkdocs-jupyter
   - mkdocstrings:
       default_handler: python
       handlers:
