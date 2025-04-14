@@ -67,7 +67,7 @@ C1[21] = np.linalg.multi_dot([Z, H, I][::-1])
 C1[22] = np.linalg.multi_dot([Z, H, S][::-1])
 C1[23] = np.linalg.multi_dot([Z, H, S2][::-1])
 
-# S1 is a subgroup of C1 (single qubit Clifford group) and is used when generating C2 (two qubit Clifford group)
+# The S1 exchange group is a subgroup of C1 (single qubit Clifford group) and is used when generating C2 (two qubit Clifford group)
 S1 = [
     C1[0],
     C1[1],

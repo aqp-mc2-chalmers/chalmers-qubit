@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Optional, Union, Literal, Type, List, TypeAlias
-from .clifford_decomposition import SingleQubitClifford, TwoQubitClifford
+from .clifford_decomposition import SingleQubitClifford, TwoQubitClifford, Clifford
 from qutip_qip.circuit import QubitCircuit
 from qutip_qip.operations import RX, RY, CZ
 
@@ -8,14 +8,12 @@ __all__ = [
     "randomized_benchmarking_sequence",
     "randomized_benchmarking_circuit",
     "calculate_net_clifford",
-]
-
-CliffordClass: TypeAlias = Type["SingleQubitClifford"] | Type["TwoQubitClifford"]
+] 
 
 def calculate_net_clifford(
     clifford_indices: np.ndarray,
-    CliffordClass: Type[SingleQubitClifford],
-) -> "SingleQubitClifford":
+    CliffordClass: Type["Clifford"],
+) -> "Clifford":
     """
     Calculate the net-clifford from a list of cliffords indices.
 
@@ -35,7 +33,6 @@ def calculate_net_clifford(
 
     # Calculate the net clifford
     net_clifford = CliffordClass(0) # assumes element 0 is the Identity
-
     for idx in clifford_indices:
         clifford = CliffordClass(idx)
 
@@ -62,7 +59,7 @@ def add_interleaved_clifford(clifford_sequence: np.ndarray, interleaved_clifford
 
 def add_inverse_clifford(
     clifford_sequence: np.ndarray,
-    CliffordClass: Union[Type["SingleQubitClifford"], Type["TwoQubitClifford"]],
+    CliffordClass: Type["Clifford"],
 ) -> np.ndarray:
     """
     Adds the inverse of the total sequence to the end of the sequence.
@@ -77,7 +74,6 @@ def add_inverse_clifford(
 
     # Calculate the net Clifford
     net_clifford = calculate_net_clifford(clifford_sequence, CliffordClass)
-    print("NET CLIFFORD", net_clifford)
     # Get the inverse of the net clifford to find the Clifford that inverts the sequence
     inverse_clifford = CliffordClass(net_clifford.idx).get_inverse() 
     return np.append(clifford_sequence, inverse_clifford.idx)
@@ -136,6 +132,7 @@ def randomized_benchmarking_sequence(
 def randomized_benchmarking_circuit(
     clifford_indices: np.ndarray, 
     num_qubits: int=1, 
+    clifford_group: Literal[1, 2] = 1,
     targets: Union[List[int],int]=0,
 ) -> QubitCircuit:
     """
@@ -149,41 +146,55 @@ def randomized_benchmarking_circuit(
     Returns:
         QubitCircuit: The randomized benchmarking circuit.
     """
-
-    operation_map = {
-        "X180": lambda q: RX(targets=q, arg_value=np.pi),
-        "X90": lambda q: RX(targets=q, arg_value=np.pi/2),
-        "Y180": lambda q: RY(targets=q, arg_value=np.pi),
-        "Y90": lambda q: RY(targets=q, arg_value=np.pi/2),
-        "mX90": lambda q: RX(targets=q, arg_value=-np.pi/2),
-        "mY90": lambda q: RY(targets=q, arg_value=-np.pi/2),
+    
+    clifford_groups = {
+        1: SingleQubitClifford,
+        2: TwoQubitClifford,
     }
-
+    
+    
+    if clifford_group not in clifford_groups:
+        raise NotImplementedError("Only one- and two-qubit Clifford groups (1 or 2) are supported.")
+    
     if num_qubits < 1:
         raise ValueError("Number of Qubits must be >=1.")
     
-    if not isinstance(targets, list):
-            targets = [targets] # Make targets into a list
+
+    CliffordClass = clifford_groups[clifford_group]
     
+    if not isinstance(targets, list):
+        targets = [targets] # Make targets into a list
+    
+    qubit_map = {f"q{idx}": target for idx, target in enumerate(targets)}
+    operation_map = {
+        "X180": lambda q: RX(targets=qubit_map[q], arg_value=np.pi),
+        "X90": lambda q: RX(targets=qubit_map[q], arg_value=np.pi/2),
+        "Y180": lambda q: RY(targets=qubit_map[q], arg_value=np.pi),
+        "Y90": lambda q: RY(targets=qubit_map[q], arg_value=np.pi/2),
+        "mX90": lambda q: RX(targets=qubit_map[q], arg_value=-np.pi/2),
+        "mY90": lambda q: RY(targets=qubit_map[q], arg_value=-np.pi/2),
+        "CZ": lambda q: CZ(controls=qubit_map[q[0]], targets=qubit_map[q[1]]),
+    }
+    
+
     # Initialize the circuit
     circuit = QubitCircuit(num_qubits)
 
     # Decompose Clifford sequence into physical gates
     for clifford_idx in clifford_indices:
-        cl_decomp = SingleQubitClifford(clifford_idx).gate_decomposition
+        cl_decomp = CliffordClass(clifford_idx).gate_decomposition
         
         if cl_decomp is None:
             raise ValueError(f"Clifford gate {clifford_idx} has no decomposition.")
-        
-        for gate in cl_decomp:
+        for gate, q in cl_decomp:
             if gate == "I":
                 continue
-            operation = operation_map[gate](targets)
+            
+            operation = operation_map[gate](q)
             circuit.add_gate(operation)
 
     return circuit
     
-
 
 if __name__ == "__main__":
     # Example usage

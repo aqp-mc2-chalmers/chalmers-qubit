@@ -25,7 +25,7 @@ class TestRandomizedBenchmarkingSequence(unittest.TestCase):
         sequence_without_recovery = self.sequence[:-1]
 
         # Compute net Clifford from the sequence
-        net_clifford = calculate_net_clifford(sequence_without_recovery)
+        net_clifford = calculate_net_clifford(sequence_without_recovery, SingleQubitClifford)
         recovery_clifford = SingleQubitClifford(recovery_idx)
 
         composed_matrix = np.dot(net_clifford.pauli_transfer_matrix, recovery_clifford.pauli_transfer_matrix)
