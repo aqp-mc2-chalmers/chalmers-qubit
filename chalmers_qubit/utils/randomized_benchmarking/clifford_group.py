@@ -62,7 +62,7 @@ C1[21] = np.linalg.multi_dot([Z, H, I][::-1])
 C1[22] = np.linalg.multi_dot([Z, H, S][::-1])
 C1[23] = np.linalg.multi_dot([Z, H, S2][::-1])
 
-# used to transform the S1 subgroup
+# used in the CNOT-, iSWAP-, and SWAP-like gates
 X90 = C1[16]
 Y90 = C1[21]
 mY90 = C1[15]
@@ -182,8 +182,8 @@ class Clifford:
         # Create Hash Table if it is empty
         if not cls.CLIFFORD_HASH_TABLE:
             for idx in range(cls.GROUP_SIZE):
-                matrix = cls(idx=idx).pauli_transfer_matrix
-                hash_value = cls._hash_matrix(matrix)
+                ptm = cls(idx=idx).pauli_transfer_matrix
+                hash_value = cls._hash_matrix(ptm)
                 cls.CLIFFORD_HASH_TABLE[hash_value] = idx
 
         hash_value = cls._hash_matrix(matrix)
