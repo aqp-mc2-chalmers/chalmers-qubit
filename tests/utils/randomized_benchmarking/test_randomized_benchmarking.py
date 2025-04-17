@@ -1,170 +1,151 @@
 import unittest
 import numpy as np
 from qutip import qeye, average_gate_fidelity
-from chalmers_qubit.utils import randomized_benchmarking_sequence, randomized_benchmarking_circuit, calculate_net_clifford
-from chalmers_qubit.utils.randomized_benchmarking.clifford_decomposition import SingleQubitClifford, TwoQubitClifford, Clifford
+
+from chalmers_qubit.utils import (
+    randomized_benchmarking_sequence, 
+    randomized_benchmarking_circuit, 
+    calculate_net_clifford
+)
+from chalmers_qubit.utils.randomized_benchmarking.pauli_transfer_matrices import CZ, I, X_theta, Y_theta
+from chalmers_qubit.utils.randomized_benchmarking.clifford_group import (
+    SingleQubitClifford, 
+    TwoQubitClifford
+)
 
 class TestRandomizedBenchmarkingSequence(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.sequence = randomized_benchmarking_sequence(
-            number_of_cliffords=100,
-            apply_inverse=True,
-            clifford_group=1,
-            seed=123
-        )
-        self.interleaved_sequence = randomized_benchmarking_sequence(
-            number_of_cliffords=4,
-            apply_inverse=True,
-            clifford_group=2,
-            interleaved_clifford_idx=10_4368,
-            seed=123
-        )
-        return super().setUp()
+        # CliffordClass, clifford_group, interleaved_clifford_idx
+        self.test_cases = [
+            (SingleQubitClifford, 1, 20),
+            (TwoQubitClifford, 2, 10_4368)
+        ]
 
-    def tearDown(self) -> None:
-        return super().tearDown()
-    
-    def test_single_qubit_clifford_equality(self):
-        c1 = SingleQubitClifford(5)
-        c2 = SingleQubitClifford(5)
-        c3 = SingleQubitClifford(6)
-
-        self.assertEqual(c1, c2, "Cliffords with the same index should be equal")
-        self.assertNotEqual(c1, c3, "Cliffords with different indices should not be equal")
-
-    def test_two_qubit_clifford_equality(self):
-        c1 = TwoQubitClifford(5)
-        c2 = TwoQubitClifford(5)
-        c3 = TwoQubitClifford(6)
-
-        self.assertEqual(c1, c2, "Cliffords with the same index should be equal")
-        self.assertNotEqual(c1, c3, "Cliffords with different indices should not be equal")
-
-    def test_single_qubit_identity_clifford(self):
-        ptm = SingleQubitClifford(0).pauli_transfer_matrix
-        eye = np.identity(4)
-        self.assertTrue(np.array_equal(eye, ptm), "The identity Clifford should be equal to itself")
-
-    def test_two_qubit_identity_clifford(self):
-        ptm = TwoQubitClifford(0).pauli_transfer_matrix
-        eye = np.identity(16)
-        self.assertTrue(np.array_equal(eye, ptm), "The identity Clifford should be equal to itself")
-
-    def test_get_inverse(self):
-        idx = 10
-        c = SingleQubitClifford(idx)
-        c_inv = c.get_inverse()
-        # Check that the inverse is correct
-        result = c_inv * c
-        identity = SingleQubitClifford(0)
-        # Check that the inverse is correct
-        self.assertTrue(result == identity, "The product of a Clifford and its inverse should be the identity")
-
-    def test_inverse_gate_creates_identity_transfer_matrix(self):
-        # The last gate is the recovery gate
-        recovery_idx = self.sequence[-1]
-        sequence_without_recovery = self.sequence[:-1]
-
-        # Compute net Clifford from the sequence
-        net_clifford = calculate_net_clifford(sequence_without_recovery, SingleQubitClifford)
-        recovery_clifford = SingleQubitClifford(recovery_idx)
-
-        composed_matrix = np.dot(net_clifford.pauli_transfer_matrix, recovery_clifford.pauli_transfer_matrix)
-        identity = np.eye(composed_matrix.shape[0])
-        np.testing.assert_allclose(composed_matrix, identity, atol=1e-10)
-
-    def test_randomized_benchmarking_circuit(self):
-        circuit = randomized_benchmarking_circuit(self.sequence)
-        U = circuit.compute_unitary()
-        f = average_gate_fidelity(U, qeye(2))
-
-        self.assertAlmostEqual(1, f, places=5, msg="Precision of randomized benchmarking circuit failed.")
+    def test_recovery_clifford_produces_identity(self):
+        """Test that recovery gate in clifford sequence yields identity."""
+        for CliffordClass, clifford_group, _ in self.test_cases:
+            with self.subTest(CliffordClass=CliffordClass.__name__):
+                sequence = randomized_benchmarking_sequence(
+                    number_of_cliffords=100,
+                    apply_inverse=True,
+                    clifford_group=clifford_group,
+                    seed=123
+                )
+                # Get the recovery Clifford
+                recovery_clifford = CliffordClass(sequence[-1]) 
+                # Compute net Clifford from the sequence
+                net_clifford = calculate_net_clifford(sequence[:-1], CliffordClass)
+                # Compute the product of the net clifford and the recovery clifford
+                clifford = net_clifford * recovery_clifford 
+                self.assertTrue(clifford == CliffordClass(0), "The product of a single-qubit sequence and its recovery should be the identity")
 
     def test_interleaved_randomized_benchmarking(self):
+        """Test that recovery gate in clifford sequence yields identity."""
+        for CliffordClass, clifford_group, interleaved_clifford_idx in self.test_cases:
+            with self.subTest(CliffordClass=CliffordClass.__name__):
+                sequence = randomized_benchmarking_sequence(
+                    number_of_cliffords=100,
+                    apply_inverse=True,
+                    clifford_group=clifford_group,
+                    interleaved_clifford_idx=interleaved_clifford_idx,
+                    seed=123
+                )
+                # Get the recovery Clifford
+                recovery_clifford = CliffordClass(sequence[-1]) 
+                # Compute net Clifford from the sequence
+                net_clifford = calculate_net_clifford(sequence[:-1], CliffordClass)
+                # Compute the product of the net clifford and the recovery clifford
+                clifford = net_clifford * recovery_clifford 
+                self.assertTrue(clifford == CliffordClass(0), "The product of a single-qubit sequence and its recovery should be the identity")
+
+    def test_interleaved_cz(self):
+        """Test that interleaved randomized benchmarking with a CZ gate results in the identity PTM."""
+
+        CliffordClass = TwoQubitClifford
+        CZ_INDEX = 10_4368  # Clifford index for CZ
+
         sequence = randomized_benchmarking_sequence(
             number_of_cliffords=100,
             apply_inverse=True,
             clifford_group=2,
-            interleaved_clifford_idx=10_4368,
+            interleaved_clifford_idx=CZ_INDEX, # Clifford index for CZ
             seed=123
         )
-        # sequence = self.interleaved_sequence
-        sequence_without_recovery = sequence[:-1]
-        recovery_idx = sequence[-1]
-        net_clifford = calculate_net_clifford(sequence_without_recovery, TwoQubitClifford)
-        recovery_clifford = TwoQubitClifford(recovery_idx)
 
-        composed_matrix = np.dot(net_clifford.pauli_transfer_matrix, recovery_clifford.pauli_transfer_matrix)
+        # Map from gate names to their PTMs
+        ptm_map = {
+            "X180": X_theta(180),
+            "X90": X_theta(90),
+            "Y180": Y_theta(180),
+            "Y90": Y_theta(90),
+            "mX90": X_theta(-90),
+            "mY90": Y_theta(-90),
+            "CZ": CZ,
+        }
 
-        identity = np.eye(composed_matrix.shape[0])
-        np.testing.assert_allclose(composed_matrix, identity, atol=1e-8)
+        # Pre-compute the tensor products to avoid repeating calculations
+        ptm_q0 = {gate: np.kron(I, ptm) for gate, ptm in ptm_map.items()}
+        ptm_q1 = {gate: np.kron(ptm, I) for gate, ptm in ptm_map.items()}
+        identity = np.kron(I, I)
+        
+        # Start with identity matrix
+        net_ptm = identity
 
+        for idx in sequence:
+            if idx == CZ_INDEX:
+                net_ptm = np.dot(CZ, net_ptm)
+                continue
 
-class TestCliffordCaching(unittest.TestCase):
+            decomposition = CliffordClass(idx).gate_decomposition
+            if decomposition is None:
+                raise ValueError(f"Clifford gate {idx} has no decomposition.")
+            
+            for gate, q in decomposition:
+                if gate == "I":
+                    continue
+                elif gate == "CZ":
+                    net_ptm = np.dot(CZ, net_ptm)
+                else:
+                    qubit_index = int(q[1:])
+                    if qubit_index == 0:
+                        net_ptm = np.dot(ptm_q0[gate], net_ptm)
+                    elif qubit_index == 1:
+                        net_ptm = np.dot(ptm_q1[gate], net_ptm)
+                    else:
+                        raise ValueError(f"Invalid qubit index {q} in decomposition.")
 
-    def setUp(self):
-        TwoQubitClifford._PTM_CACHE.clear()
-        TwoQubitClifford._GATE_DECOMP_CACHE.clear()
+        # Verify result is close to identity
+        np.testing.assert_array_almost_equal(net_ptm, identity, decimal=5)
 
-    def test_two_qubit_ptm_cache(self):
-        idx1, idx2 = 0, 5
-
-        # Compute PTMs
-        c1 = TwoQubitClifford(idx=idx1).pauli_transfer_matrix
-
-        self.assertIn(idx1, TwoQubitClifford._PTM_CACHE)
-
-        np.testing.assert_array_equal(c1, TwoQubitClifford._PTM_CACHE[idx1])
-
-        # Check that a new instance has the share the same cash
-        c2 = TwoQubitClifford(idx=idx2)
-        np.testing.assert_array_equal(c2._PTM_CACHE[idx1], c1)
-
-    def test_two_qubit_gate_decomp_cache(self):
-        idx1, idx2 = 0, 5
-
-        decomp1 = TwoQubitClifford(idx=idx1).gate_decomposition
-
-        self.assertIn(idx1, TwoQubitClifford._GATE_DECOMP_CACHE)
-        self.assertEqual(decomp1, TwoQubitClifford._GATE_DECOMP_CACHE[idx1])
-
-        # Check that a new instance has the share the same cash
-        decomp2 = TwoQubitClifford(idx=idx2)
-        self.assertEqual(decomp2._GATE_DECOMP_CACHE[idx1], decomp1)
-
-class TestCliffordHashTable(unittest.TestCase):
-
-    def setUp(self):
-        SingleQubitClifford.CLIFFORD_HASH_TABLE.clear()
-        TwoQubitClifford.CLIFFORD_HASH_TABLE.clear()
-
-    def test_clifford_hash_table_generation(self):
-        """
-        Test the generation of the hash table for both SingleQubitClifford and TwoQubitClifford classes.
-        This test checks if the hash table is correctly populated with the expected values.
-        """
-
-        idx = 5 # Some arbitrary Clifford idx
-        test_cases = [
-            (SingleQubitClifford, idx),
-            (TwoQubitClifford, idx),
-        ]
-
-        for CliffordClass, idx in test_cases:
+    def test_randomized_benchmarking_circuit(self):
+        for CliffordClass, clifford_group, _ in self.test_cases:
             with self.subTest(CliffordClass=CliffordClass.__name__):
-                c = CliffordClass(idx)
-                ptm = c.pauli_transfer_matrix
+                sequence = randomized_benchmarking_sequence(
+                    number_of_cliffords=100,
+                    apply_inverse=True,
+                    clifford_group=clifford_group,
+                    seed=123
+                )
+                if clifford_group == 1:
+                    # For single qubit, the circuit is a single qubit gate
+                    circuit = randomized_benchmarking_circuit(
+                        sequence,
+                        num_qubits=1,
+                        clifford_group=clifford_group
+                    )
+                elif clifford_group == 2:
+                    # For two qubit, the circuit is a two qubit gate
+                    circuit = randomized_benchmarking_circuit(
+                        sequence,
+                        num_qubits=2,
+                        clifford_group=clifford_group,
+                        targets=[0, 1]
+                    )
 
-                # Trigger hash table population
-                c.find_clifford_index(ptm)
-
-                # Check if the hash table was correctly populated
-                hash_value = c._hash_matrix(ptm)
-                # Assert that the hash value is in the hash table
-                self.assertIn(hash_value, CliffordClass.CLIFFORD_HASH_TABLE)
-                # Assert that the index in the hash table matches the original index
-                self.assertEqual(CliffordClass.CLIFFORD_HASH_TABLE[hash_value], idx)
+                U = circuit.compute_unitary()
+                f = average_gate_fidelity(U, qeye(dimensions=[2]*clifford_group))
+                self.assertAlmostEqual(1, f, places=5, msg="Precision of randomized benchmarking circuit failed.")
 
 if __name__ == '__main__':
     unittest.main()
