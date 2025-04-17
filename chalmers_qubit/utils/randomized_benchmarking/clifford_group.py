@@ -26,7 +26,9 @@ import numpy as np
 from .pauli_transfer_matrices import I, X, Y, Z, S, S2, H, CZ
 from typing import List, Tuple, Dict, ClassVar
 
-# explicitly reversing order because order of operators is order in time
+# The decomposition of the single qubit clifford group as per
+# Epstein et al. Phys. Rev. A 89, 062321 (2014)
+# Note: Explicitly reversing order because order of operators is order in time
 epstein_efficient_decomposition = [[] for _ in range(24)]
 epstein_efficient_decomposition[0] = ["I"]
 epstein_efficient_decomposition[1] = ["Y90", "X90"]
@@ -54,7 +56,7 @@ epstein_efficient_decomposition[22] = ["mX90", "Y180"]
 epstein_efficient_decomposition[23] = ["X90", "Y90", "mX90"]
 
 # The single qubit clifford group where each element is a 4x4 pauli transfer matrix
-# Explictly reversing order because order of operators is order in time
+# Note: Explictly reversing order because order of operators is order in time
 C1 = [np.empty([4, 4])] * (24)
 C1[0] = np.linalg.multi_dot([I, I, I][::-1])
 C1[1] = np.linalg.multi_dot([I, I, S][::-1])
