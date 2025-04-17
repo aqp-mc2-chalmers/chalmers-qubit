@@ -1,19 +1,6 @@
 import numpy as np
 from typing import Literal
 
-__all__ = [
-    "I",
-    "X",
-    "Y",
-    "Z",
-    "S",
-    "S2",
-    "H",
-    "CZ",
-    "X_theta",
-    "Y_theta",
-]
-
 I = np.eye(4)
 
 # Pauli group

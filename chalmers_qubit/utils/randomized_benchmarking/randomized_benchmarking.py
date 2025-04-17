@@ -1,3 +1,27 @@
+# Modifications copyright (c) 2025 Pontus Vikstål
+#
+# MIT License
+# 
+# Copyright (c) 2016 DiCarlo lab-QuTech-Delft University of Technology
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 import numpy as np
 from typing import Optional, Union, Literal, Type, List
 from .clifford_group import SingleQubitClifford, TwoQubitClifford, Clifford
@@ -131,7 +155,7 @@ def randomized_benchmarking_sequence(
 
 def randomized_benchmarking_circuit(
     clifford_indices: np.ndarray, 
-    num_qubits: int=1, 
+    num_qubits: int=1,
     clifford_group: Literal[1, 2] = 1,
     targets: Union[List[int],int]=0,
 ) -> QubitCircuit:

@@ -1,11 +1,30 @@
+# Modifications copyright (c) 2025 Pontus Vikstål
+#
+# MIT License
+# 
+# Copyright (c) 2016 DiCarlo lab-QuTech-Delft University of Technology
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 import numpy as np
 from .pauli_transfer_matrices import I, X, Y, Z, S, S2, H, CZ
 from typing import List, Tuple, Dict, ClassVar
-
-"""
-Decomposition of the single qubit clifford group as per
-Epstein et al. Phys. Rev. A 89, 062321 (2014)
-"""
 
 # explicitly reversing order because order of operators is order in time
 epstein_efficient_decomposition = [[] for _ in range(24)]
@@ -212,7 +231,11 @@ class Clifford:
 
 
 class SingleQubitClifford(Clifford):
-    """Single Qubit Clifford gate class"""
+    """Single Qubit Clifford gate class
+    
+    The decomposition of the single qubit clifford group follows paper
+    Epstein et al. Phys. Rev. A 89, 062321 (2014)
+    """
 
     # Class Variables
     CLIFFORD_HASH_TABLE = {} # Initialize the hash table
@@ -238,7 +261,53 @@ class SingleQubitClifford(Clifford):
         return gate_decomp
 
 class TwoQubitClifford(Clifford):
-    """Two Qubit Clifford gate class"""
+    """Two Qubit Clifford gate class
+    
+    The Clifford decomposition closely follows two papers:
+
+    1. Corcoles et al. Process verification ... Phys. Rev. A. 2013 
+    http://journals.aps.org/pra/pdf/10.1103/PhysRevA.87.030301
+    for the different classes of two-qubit Cliffords.
+
+    2. Barends et al. Superconducting quantum circuits at the ... Nature 2014
+    https://www.nature.com/articles/nature13171?lang=en
+    for writing the cliffords in terms of CZ gates.
+    
+    2-qubit clifford decompositions
+    -------------------------------
+    The two qubit clifford group (C2) consists of 11520 two-qubit cliffords
+    These gates can be subdivided into four classes.
+        1. The Single-qubit like class  | 576 elements  (24^2)
+        2. The CNOT-like class          | 5184 elements (24^2 * 3^2)
+        3. The iSWAP-like class         | 5184 elements (24^2 * 3^2)
+        4. The SWAP-like class          | 576  elements (24^2)
+        --------------------------------|------------- +
+        Two-qubit Clifford group C2     | 11520 elements
+
+    1. The Single-qubit like class
+        -- C1 --
+        -- C1 --
+
+    2. The CNOT-like class
+        --C1--•--S1--      --C1--•--S1------
+            |        ->        |
+        --C1--⊕--S1--      --C1--•--S1^Y90--
+
+    3. The iSWAP-like class
+        --C1--*--S1--     --C1--•---Y90--•--S1^Y90--
+            |       ->        |        |
+        --C1--*--S1--     --C1--•--mY90--•--S1^X90--
+
+    4. The SWAP-like class
+        --C1--x--     --C1--•-mY90--•--Y90--•-------
+            |   ->        |       |       |
+        --C1--x--     --C1--•--Y90--•-mY90--•--Y90--
+
+    C1: element of the single qubit Clifford group
+        Note: We use the decomposition defined in Epstein et al. here
+
+    S1: element of the S1 group, a subgroup of the single qubit Clifford group
+    """
 
     # Class Variables
     CLIFFORD_HASH_TABLE = {}
