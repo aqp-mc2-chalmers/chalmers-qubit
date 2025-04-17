@@ -1,6 +1,6 @@
 import numpy as np
-from typing import Optional, Union, Literal, Type, List, TypeAlias
-from .clifford_decomposition import SingleQubitClifford, TwoQubitClifford, Clifford
+from typing import Optional, Union, Literal, Type, List
+from .clifford_group import SingleQubitClifford, TwoQubitClifford, Clifford
 from qutip_qip.circuit import QubitCircuit
 from qutip_qip.operations import RX, RY, CZ
 
@@ -34,7 +34,7 @@ def calculate_net_clifford(
     # Calculate the net clifford
     net_clifford = CliffordClass(0) # assumes element 0 is the Identity
     for idx in clifford_indices:
-        clifford = CliffordClass(idx)
+        clifford = CliffordClass(idx % 100_000)
 
         # order of operators applied in is right to left, therefore
         # the new operator is applied on the left side.
@@ -152,7 +152,6 @@ def randomized_benchmarking_circuit(
         2: TwoQubitClifford,
     }
     
-    
     if clifford_group not in clifford_groups:
         raise NotImplementedError("Only one- and two-qubit Clifford groups (1 or 2) are supported.")
     
@@ -175,23 +174,25 @@ def randomized_benchmarking_circuit(
         "mY90": lambda q: RY(targets=qubit_map[q], arg_value=-np.pi/2),
         "CZ": lambda q: CZ(controls=qubit_map[q[0]], targets=qubit_map[q[1]]),
     }
-    
 
     # Initialize the circuit
     circuit = QubitCircuit(num_qubits)
 
     # Decompose Clifford sequence into physical gates
     for clifford_idx in clifford_indices:
-        cl_decomp = CliffordClass(clifford_idx).gate_decomposition
-        
-        if cl_decomp is None:
-            raise ValueError(f"Clifford gate {clifford_idx} has no decomposition.")
-        for gate, q in cl_decomp:
-            if gate == "I":
-                continue
-            
-            operation = operation_map[gate](q)
-            circuit.add_gate(operation)
+        # If interleaved clifford idx is 10_4368, use CZ gate
+        if clifford_idx == 10_4368:
+            circuit.add_gate(CZ(controls=targets[0], targets=targets[1]))
+        else:
+            cl_decomp = CliffordClass(clifford_idx).gate_decomposition
+            if cl_decomp is None:
+                raise ValueError(f"Clifford gate {clifford_idx} has no decomposition.")
+            for gate, q in cl_decomp:
+                if gate == "I":
+                    continue
+                
+                operation = operation_map[gate](q)
+                circuit.add_gate(operation)
 
     return circuit
     
