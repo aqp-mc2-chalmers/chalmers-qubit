@@ -116,6 +116,8 @@ class TestRandomizedBenchmarkingSequence(unittest.TestCase):
                         raise ValueError(f"Invalid qubit index {q} in decomposition.")
 
         # Verify result is close to identity
+        phase = np.angle(net_ptm[0,0]) # get global phase
+        net_ptm = np.exp(-1j * phase) * net_ptm # remove possible global phase
         np.testing.assert_array_almost_equal(net_ptm, identity, decimal=5)
 
     def test_randomized_benchmarking_circuit(self):
