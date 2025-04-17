@@ -1,30 +1,122 @@
 import numpy as np
-from .clifford_group import C1, epstein_efficient_decomposition, S1
-from .pauli_transfer_matrices import CZ
-from typing import Optional, List, Tuple, Dict
+from .pauli_transfer_matrices import I, X, Y, Z, S, S2, H, CZ
+from typing import List, Tuple, Dict, ClassVar
 
+"""
+Decomposition of the single qubit clifford group as per
+Epstein et al. Phys. Rev. A 89, 062321 (2014)
+"""
+
+# explicitly reversing order because order of operators is order in time
+epstein_efficient_decomposition = [[] for _ in range(24)]
+epstein_efficient_decomposition[0] = ["I"]
+epstein_efficient_decomposition[1] = ["Y90", "X90"]
+epstein_efficient_decomposition[2] = ["mX90", "mY90"]
+epstein_efficient_decomposition[3] = ["X180"]
+epstein_efficient_decomposition[4] = ["mY90", "mX90"]
+epstein_efficient_decomposition[5] = ["X90", "mY90"]
+epstein_efficient_decomposition[6] = ["Y180"]
+epstein_efficient_decomposition[7] = ["mY90", "X90"]
+epstein_efficient_decomposition[8] = ["X90", "Y90"]
+epstein_efficient_decomposition[9] = ["X180", "Y180"]
+epstein_efficient_decomposition[10] = ["Y90", "mX90"]
+epstein_efficient_decomposition[11] = ["mX90", "Y90"]
+epstein_efficient_decomposition[12] = ["Y90", "X180"]
+epstein_efficient_decomposition[13] = ["mX90"]
+epstein_efficient_decomposition[14] = ["X90", "mY90", "mX90"]
+epstein_efficient_decomposition[15] = ["mY90"]
+epstein_efficient_decomposition[16] = ["X90"]
+epstein_efficient_decomposition[17] = ["X90", "Y90", "X90"]
+epstein_efficient_decomposition[18] = ["mY90", "X180"]
+epstein_efficient_decomposition[19] = ["X90", "Y180"]
+epstein_efficient_decomposition[20] = ["X90", "mY90", "X90"]
+epstein_efficient_decomposition[21] = ["Y90"]
+epstein_efficient_decomposition[22] = ["mX90", "Y180"]
+epstein_efficient_decomposition[23] = ["X90", "Y90", "mX90"]
+
+# The single qubit clifford group where each element is a 4x4 pauli transfer matrix
+# Explictly reversing order because order of operators is order in time
+C1 = [np.empty([4, 4])] * (24)
+C1[0] = np.linalg.multi_dot([I, I, I][::-1])
+C1[1] = np.linalg.multi_dot([I, I, S][::-1])
+C1[2] = np.linalg.multi_dot([I, I, S2][::-1])
+C1[3] = np.linalg.multi_dot([X, I, I][::-1])
+C1[4] = np.linalg.multi_dot([X, I, S][::-1])
+C1[5] = np.linalg.multi_dot([X, I, S2][::-1])
+C1[6] = np.linalg.multi_dot([Y, I, I][::-1])
+C1[7] = np.linalg.multi_dot([Y, I, S][::-1])
+C1[8] = np.linalg.multi_dot([Y, I, S2][::-1])
+C1[9] = np.linalg.multi_dot([Z, I, I][::-1])
+C1[10] = np.linalg.multi_dot([Z, I, S][::-1])
+C1[11] = np.linalg.multi_dot([Z, I, S2][::-1])
+C1[12] = np.linalg.multi_dot([I, H, I][::-1])
+C1[13] = np.linalg.multi_dot([I, H, S][::-1])
+C1[14] = np.linalg.multi_dot([I, H, S2][::-1])
+C1[15] = np.linalg.multi_dot([X, H, I][::-1])
+C1[16] = np.linalg.multi_dot([X, H, S][::-1])
+C1[17] = np.linalg.multi_dot([X, H, S2][::-1])
+C1[18] = np.linalg.multi_dot([Y, H, I][::-1])
+C1[19] = np.linalg.multi_dot([Y, H, S][::-1])
+C1[20] = np.linalg.multi_dot([Y, H, S2][::-1])
+C1[21] = np.linalg.multi_dot([Z, H, I][::-1])
+C1[22] = np.linalg.multi_dot([Z, H, S][::-1])
+C1[23] = np.linalg.multi_dot([Z, H, S2][::-1])
+
+# used to transform the S1 subgroup
+X90 = C1[16]
+Y90 = C1[21]
+mY90 = C1[15]
+
+# The S1 exchange group is a subgroup of C1 (single qubit Clifford group) 
+# and is used when generating C2 (two qubit Clifford group)
+S1 = [
+    C1[0],
+    C1[1],
+    C1[2],
+]
 
 class Clifford:
-    """Base class for Clifford"""
+    """Base class for Clifford
     
-    GROUP_SIZE: int # Size of the Clifford gGroup
+        Abstract base class for all Clifford operations.
+
+        Attributes:
+            idx (int): Index of the Clifford operation
+            GROUP_SIZE (ClassVar[int]): Size of the Clifford group
+            CLIFFORD_HASH_TABLE (CLassVar[Dict[int, int]]): Hash table for fast lookup of Clifford indices
+    """
+    
+    CLIFFORD_HASH_TABLE: ClassVar[Dict[int, int]]
+    GROUP_SIZE: ClassVar[int]
 
     def __init__(self, idx: int) -> None:
         """Initialize the Clifford object with a given index
         
         Args:
             idx (int): Index of the Clifford operation
+
+        Attributes:
+            idx (int): Index of the Clifford operation
             
         Raises:
-            ValueError: If the index is not valid
+            ValueError: If the index is not valid (0 <= idx < GROUP_SIZE)
         """
         if not 0 <= idx < self.GROUP_SIZE:
             raise ValueError(f"Invalid Clifford index: {idx}. Must be 0 <= idx < {self.GROUP_SIZE}")
         self.idx = idx
-        self.pauli_transfer_matrix: np.ndarray
     
     def __mul__(self, other: "Clifford") -> "Clifford":
-        """Multiply two Clifford operations"""
+        """Multiply two Clifford operations
+        
+        Args:
+            other (Clifford): Another Clifford operation
+            
+        Returns:
+            Clifford: The product of the two Clifford Pauli Transfer Matrices
+            
+        Raises:
+            TypeError: If other is not the same type of Clifford
+        """
         if not isinstance(other, self.__class__):
             raise TypeError(f"Cannot multiply {self.__class__.__name__} with {other.__class__.__name__}")
         
@@ -32,27 +124,86 @@ class Clifford:
         idx = self.find_clifford_index(net_op)
         return self.__class__(idx)
     
+    def __eq__(self, other: "Clifford") -> bool:
+        """Check if two Clifford operations are equal.
+        
+        Args:
+            other (Clifford): Another Clifford operation
+            
+        Returns:
+            bool: True if the operations are equal, False otherwise
+        """
+        if not isinstance(other, self.__class__):
+            return False
+        return self.idx == other.idx
+    
     def get_inverse(self) -> "Clifford":
-        """Get the inverse of this Clifford operation"""
+        """Get the inverse of this Clifford operation
+        
+        Returns:
+            Clifford: The inverse operation
+        """
         inverse_ptm = np.linalg.inv(self.pauli_transfer_matrix).astype(int)
         idx = self.find_clifford_index(inverse_ptm)
         return self.__class__(idx)
     
     @property
-    def gate_decomposition(self) -> List:
-        """Returns the gate decomposition of the Clifford gate"""
+    def pauli_transfer_matrix(self) -> np.ndarray:
+        """Returns the Pauli transfer matrix of the Clifford operation.
+        
+        Returns:
+            np.ndarray: The Pauli transfer matrix
+        """
+        raise NotImplementedError("Subclasses must implement pauli_transfer_matrix") 
+    
+    @property
+    def gate_decomposition(self) -> List[Tuple[List[str], str]]:
+        """Returns the gate decomposition of the Clifford gate
+        
+        Returns:
+            List: Gate decomposition as a list of tuples (gate_name, qubit_identifier)
+        """
         raise NotImplementedError("Subclasses must implement gate_decomposition")
     
     @classmethod
     def find_clifford_index(cls, matrix: np.ndarray) -> int:
-        """Find the Clifford index of a given Clifford Pauli transfer matrix"""
-        raise NotImplementedError("Subclasses must implement find_clifford_index")
+        """Find the index of a Clifford matrix using hash lookup
+        
+        Args:
+            matrix (np.ndarray): The Pauli transfer matrix
+            
+        Returns:
+            int: The index of the Clifford operation
+            
+        Raises:
+            ValueError: If the Clifford index is not found
+        """
+
+        # Create Hash Table if it is empty
+        if not cls.CLIFFORD_HASH_TABLE:
+            for idx in range(cls.GROUP_SIZE):
+                matrix = cls(idx=idx).pauli_transfer_matrix
+                hash_value = cls._hash_matrix(matrix)
+                cls.CLIFFORD_HASH_TABLE[hash_value] = idx
+
+        hash_value = cls._hash_matrix(matrix)
+        # Look up if the hash values is in our hash table
+        if hash_value in cls.CLIFFORD_HASH_TABLE:
+            return cls.CLIFFORD_HASH_TABLE[hash_value]
+        
+        raise ValueError("Clifford index not found.")
     
     @staticmethod
-    def hash_matrix(matrix: np.ndarray) -> int:
-        """Create a hash value for a matrix using NumPy's internal representation
+    def _hash_matrix(matrix: np.ndarray) -> int:
+        """Create a hash value for a matrix using NumPy's internal representation.
             
-        Use the byte representation of the rounded integer matrix
+        Use the byte representation of the rounded integer matrix.
+        
+        Args:
+            matrix (np.ndarray): The Pauli transfer matrix to hash
+            
+        Returns:
+            int: Hash value of the Pauli transfer matrix
         """
         return hash(matrix.round().astype(int).tobytes())
     
@@ -63,40 +214,19 @@ class Clifford:
 class SingleQubitClifford(Clifford):
     """Single Qubit Clifford gate class"""
 
-    GROUP_SIZE = 24  # Size of the single qubit Clifford group
-    CLIFFORD_HASH_TABLE: Dict[int, int] = {}
-
-    def __init__(self, idx: int) -> None:
-        """Initialize the SingleQubitClifford object with a given index
-
-        Args:
-            idx (int): Index of the single qubit Clifford operation
-            
-        Raises:
-            ValueError: If the index is not valid (0 <= idx < 24)
-        """
-        super().__init__(idx)
-        self.pauli_transfer_matrix = C1[idx]
+    # Class Variables
+    CLIFFORD_HASH_TABLE = {} # Initialize the hash table
     
-    @classmethod
-    def find_clifford_index(cls, matrix: np.ndarray) -> int:
-        """Find the index of a Clifford matrix using hash lookup"""
-        # Create Hash Table if it is empty
-        if not cls.CLIFFORD_HASH_TABLE:
-            print("Creating Hash Table")
-            for idx, clifford_matrix in enumerate(C1):
-                hash_value = cls.hash_matrix(clifford_matrix)
-                cls.CLIFFORD_HASH_TABLE[hash_value] = idx
+    # Class Constants
+    GROUP_SIZE = 24  # Size of the single qubit Clifford group
 
-        hash_value = cls.hash_matrix(matrix)
-        # Look up if the hash values is in our hash table
-        if hash_value in cls.CLIFFORD_HASH_TABLE:
-            return cls.CLIFFORD_HASH_TABLE[hash_value]
-        
-        raise ValueError("Clifford index not found.")
+    @property
+    def pauli_transfer_matrix(self) -> np.ndarray:
+        """Returns the Pauli transfer matrix of the single qubit Clifford operation"""
+        return C1[self.idx]
     
     @property
-    def gate_decomposition(self) -> List[Tuple[str, str]]:
+    def gate_decomposition(self) -> List[Tuple[List[str], str]]:
         """
         Returns the gate decomposition of the single qubit Clifford group
         according to the decomposition by Epstein et al.
@@ -104,18 +234,16 @@ class SingleQubitClifford(Clifford):
         Returns:
             List of tuples where each tuple contains (gate_name, qubit_identifier)
         """
-        gates = [(g, "q0") for g in epstein_efficient_decomposition[self.idx]]
-        return gates
-    
-# used to transform the S1 subgroup
-X90 = C1[16]
-Y90 = C1[21]
-mY90 = C1[15]
+        gate_decomp = [(g, "q0") for g in epstein_efficient_decomposition[self.idx]]
+        return gate_decomp
 
 class TwoQubitClifford(Clifford):
     """Two Qubit Clifford gate class"""
 
-    CLIFFORD_HASH_TABLE: Dict[int, int] = {}
+    # Class Variables
+    CLIFFORD_HASH_TABLE = {}
+    _PTM_CACHE = {} # Initialize the cache for PTMs
+    _GATE_DECOMP_CACHE = {} # Initialize the cache for gate decompositions
 
     # Class Constants
     GROUP_SIZE_CLIFFORD = 24
@@ -129,81 +257,39 @@ class TwoQubitClifford(Clifford):
     assert GROUP_SIZE_SINGLE_QUBIT == 576
     assert GROUP_SIZE_CNOT == 5184
     assert GROUP_SIZE == 11_520
-
-    # class variables
-    _gate_decompositions = [[] for _ in range(GROUP_SIZE)]
-    _pauli_transfer_matrices: List[Optional[np.ndarray]] = [None] * GROUP_SIZE
-
-    def __init__(self, idx: int) -> None:
-        """Initialize the TwoQubitClifford object with a given index
-
-        Args:
-            idx (int): Index of the single qubit Clifford operation
-            
-        Raises:
-            ValueError: If the index is not valid (0 <= idx < 11520)
-        """
-        super().__init__(idx)
-
-    @property  # FIXME: remove
-    def pauli_transfer_matrix(self) -> np.ndarray:
-        # check cache
-        if self._pauli_transfer_matrices[self.idx] is None:
-            # compute
-            if self.idx < 576:
-                _pauli_transfer_matrices = self.single_qubit_like_PTM(self.idx)
-            elif self.idx < 576 + 5184:
-                _pauli_transfer_matrices = self.CNOT_like_PTM(self.idx - 576)
-            elif self.idx < 576 + 2 * 5184:
-                _pauli_transfer_matrices = self.iSWAP_like_PTM(self.idx - (576 + 5184))
-            else:  # NB: GROUP_SIZE checked upon construction
-                _pauli_transfer_matrices = self.SWAP_like_PTM(self.idx - (576 + 2 * 5184))
-
-            # store in cache
-            self._pauli_transfer_matrices[self.idx] = _pauli_transfer_matrices
-
-        return self._pauli_transfer_matrices[self.idx]
     
-    @property  # FIXME: remove
+    @property
+    def pauli_transfer_matrix(self) -> np.ndarray:
+        if self.idx not in self._PTM_CACHE:
+            if self.idx < 576:
+                ptm = self.single_qubit_like_PTM(self.idx)
+            elif self.idx < 576 + 5184:
+                ptm = self.CNOT_like_PTM(self.idx - 576)
+            elif self.idx < 576 + 2 * 5184:
+                ptm = self.iSWAP_like_PTM(self.idx - (576 + 5184))
+            else:  # GROUP_SIZE checked upon construction
+                ptm = self.SWAP_like_PTM(self.idx - (576 + 2 * 5184))
+            self._PTM_CACHE[self.idx] = ptm
+        return self._PTM_CACHE[self.idx]
+    
+    @property
     def gate_decomposition(self):
         """
         Returns the gate decomposition of the two qubit Clifford group.
 
         Single qubit Cliffords are decomposed according to Epstein et al.
         """
-
-        # check cache
-        if not self._gate_decompositions[self.idx]:
-            # compute
+        if self.idx not in self._GATE_DECOMP_CACHE:
             if self.idx < 576:
-                _gate_decomposition = self.single_qubit_like_gates(self.idx)
+                gate_decomp = self.single_qubit_like_gates(self.idx)
             elif self.idx < 576 + 5184:
-                _gate_decomposition = self.CNOT_like_gates(self.idx - 576)
+                gate_decomp = self.CNOT_like_gates(self.idx - 576)
             elif self.idx < 576 + 2 * 5184:
-                _gate_decomposition = self.iSWAP_like_gates(self.idx - (576 + 5184))
-            else:  # NB: GROUP_SIZE checked upon construction
-                _gate_decomposition = self.SWAP_like_gates(self.idx - (576 + 2 * 5184))
-            # store in cache
-            self._gate_decompositions[self.idx] = _gate_decomposition
-        return self._gate_decompositions[self.idx]
-    
-    @classmethod
-    def find_clifford_index(cls, matrix: np.ndarray) -> int:
-        """Find the index of a Clifford matrix using hash lookup"""
-        # Create Hash Table if it is empty
-        if not cls.CLIFFORD_HASH_TABLE:
-            print("Creating Hash Table")
-            for idx in range(cls.GROUP_SIZE):
-                matrix = cls(idx=idx).pauli_transfer_matrix
-                hash_value = cls.hash_matrix(matrix)
-                cls.CLIFFORD_HASH_TABLE[hash_value] = idx
-
-        hash_value = cls.hash_matrix(matrix)
-        # Look up if the hash values is in our hash table
-        if hash_value in cls.CLIFFORD_HASH_TABLE:
-            return cls.CLIFFORD_HASH_TABLE[hash_value]
-        
-        raise ValueError("Clifford index not found.")
+                gate_decomp = self.iSWAP_like_gates(self.idx - (576 + 5184))
+            else:  # GROUP_SIZE checked upon construction
+                gate_decomp = self.SWAP_like_gates(self.idx - (576 + 2 * 5184))
+            self._GATE_DECOMP_CACHE[self.idx] = gate_decomp
+        return self._GATE_DECOMP_CACHE[self.idx]
     
     @classmethod
     def single_qubit_like_PTM(cls, idx: int) -> np.ndarray:
@@ -256,7 +342,7 @@ class TwoQubitClifford(Clifford):
         return np.linalg.multi_dot(list(reversed([C1_q0, C1_q1, CZ, S1_q0, S1y_q1])))
 
     @classmethod
-    def CNOT_like_gates(cls, idx: int) -> List[Tuple[str, str]]:
+    def CNOT_like_gates(cls, idx: int):
         """
         Returns the gates for Cliffords of the cnot like class
             (q0)  --C1--•--S1--      --C1--•--S1------
@@ -275,7 +361,6 @@ class TwoQubitClifford(Clifford):
 
         idx_2s = SingleQubitClifford.find_clifford_index(S1[idx_2])
         S1_q0 = [(g, "q0") for g in epstein_efficient_decomposition[idx_2s]]
-        # FIXME: precomputation of these 3 entries would be more efficient (more similar occurrences in this file):
         idx_3s = SingleQubitClifford.find_clifford_index(np.dot(C1[idx_3], Y90))
         S1_yq1 = [(g, "q1") for g in epstein_efficient_decomposition[idx_3s]]
 
@@ -309,7 +394,7 @@ class TwoQubitClifford(Clifford):
         )
 
     @classmethod
-    def iSWAP_like_gates(cls, idx: int) -> List[Tuple[str, str]]:
+    def iSWAP_like_gates(cls, idx: int):
         """
         Returns the gates for Cliffords of the iSWAP like class
             (q0)  --C1--*--S1--     --C1--•---Y90--•--S1^Y90--
@@ -382,7 +467,7 @@ class TwoQubitClifford(Clifford):
         )
 
     @classmethod
-    def SWAP_like_gates(cls, idx: int) -> List[Tuple[str, str]]:
+    def SWAP_like_gates(cls, idx: int):
         """
         Returns the gates for Cliffords of the SWAP like class
 
@@ -396,8 +481,6 @@ class TwoQubitClifford(Clifford):
         C1_q0 = [(g, "q0") for g in epstein_efficient_decomposition[idx_q0]]
         C1_q1 = [(g, "q1") for g in epstein_efficient_decomposition[idx_q1]]
         CZ = [("CZ", ["q0", "q1"])]
-
-        # sq_swap_gates_0 = np.kron(Y90, mY90)
 
         sqs_idx_q0 = SingleQubitClifford.find_clifford_index(mY90)
         sqs_idx_q1 = SingleQubitClifford.find_clifford_index(Y90)
