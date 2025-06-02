@@ -23,7 +23,7 @@
 # SOFTWARE.
 
 import numpy as np
-from .pauli_transfer_matrices import I, X, Y, Z, S, S2, H, CZ
+from chalmers_qubit.utils.randomized_benchmarking.pauli_transfer_matrices import I, X, Y, Z, S, S2, H, CZ
 from typing import List, Tuple, Dict, ClassVar
 
 # The decomposition of the single qubit clifford group as per
