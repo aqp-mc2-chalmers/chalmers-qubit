@@ -5,3 +5,4 @@
 ::: chalmers_qubit.sarimner.noise.ZZCrossTalk
 ::: chalmers_qubit.base.operations.project_on_qubit
 ::: chalmers_qubit.base.gates.cczs
+::: chalmers_qubit.utils.randomized_benchmarking.RandomizedBenchmarking
