@@ -23,206 +23,289 @@
 # SOFTWARE.
 
 import numpy as np
-from typing import Optional, Union, Literal, Type, List
-from .clifford_group import SingleQubitClifford, TwoQubitClifford, Clifford
+from typing import Optional, Union, Literal, Dict, List
+from chalmers_qubit.utils.randomized_benchmarking.clifford_group import SingleQubitClifford, TwoQubitClifford, Clifford
+from chalmers_qubit.utils.transformation import unitary_to_ptm
+from qutip import Qobj
 from qutip_qip.circuit import QubitCircuit
-from qutip_qip.operations import RX, RY, CZ
+from qutip_qip.operations import RX, RY, CZ, Gate
 
 __all__ = [
-    "randomized_benchmarking_sequence",
-    "randomized_benchmarking_circuit",
-    "calculate_net_clifford",
-] 
+    "RandomizedBenchmarking",
+]
 
-def calculate_net_clifford(
-    clifford_indices: np.ndarray,
-    CliffordClass: Type["Clifford"],
-) -> "Clifford":
+class RandomizedBenchmarking:
     """
-    Calculate the net-clifford from a list of cliffords indices.
-
-    Args:
-        clifford_indices (np.ndarray): Array of integers specifying the Cliffords.
-        CliffordClass: Clifford class used to determine the inversion technique
-                  and valid indices. Valid choices are `SingleQubitClifford`
-                  and `TwoQubitClifford`.
-
-    Returns:
-        net_clifford: a `Clifford` object containing the net-clifford.
-            the Clifford index is contained in the Clifford.idx attribute.
-
-    Note: the order corresponds to the order in a pulse sequence but is
-        the reverse of what it would be in a chained dot product.
-    """
-
-    # Calculate the net clifford
-    net_clifford = CliffordClass(0) # assumes element 0 is the Identity
-    for idx in clifford_indices:
-        clifford = CliffordClass(idx % 100_000)
-
-        # order of operators applied in is right to left, therefore
-        # the new operator is applied on the left side.
-        net_clifford = clifford * net_clifford
-
-    return net_clifford
-
-def add_interleaved_clifford(clifford_sequence: np.ndarray, interleaved_clifford: int) -> np.ndarray:
-    """
-    Adds an interleaved Clifford gate to the sequence.
-
-    Args:
-        clifford_sequence (np.ndarray): Array of Clifford indices.
-
-    Returns:
-        np.ndarray: Array with interleaved Clifford.
-    """
-    interleaved_sequence = np.empty(clifford_sequence.size * 2, dtype=int)
-    interleaved_sequence[0::2] = clifford_sequence
-    interleaved_sequence[1::2] = interleaved_clifford
-    return interleaved_sequence
-
-def add_inverse_clifford(
-    clifford_sequence: np.ndarray,
-    CliffordClass: Type["Clifford"],
-) -> np.ndarray:
-    """
-    Adds the inverse of the total sequence to the end of the sequence.
-
-    Args:
-        clifford_sequence (np.ndarray): Array of Clifford indices.
-        CliffordClass: The class of the Clifford group used.
-
-    Returns:
-        np.ndarray: Array with appended inverse Clifford.
-    """
-
-    # Calculate the net Clifford
-    net_clifford = calculate_net_clifford(clifford_sequence, CliffordClass)
-    # Get the inverse of the net clifford to find the Clifford that inverts the sequence
-    inverse_clifford = CliffordClass(net_clifford.idx).get_inverse() 
-    return np.append(clifford_sequence, inverse_clifford.idx)
-
-def randomized_benchmarking_sequence(
-    number_of_cliffords: int,
-    apply_inverse: bool = True,
-    clifford_group: Literal[1, 2] = 1,
-    interleaved_clifford_idx: Optional[int] = None,
-    seed: Optional[int] = None,
-) -> np.ndarray:
-    """
-    Generates a randomized benchmarking sequence using the one- or two-qubit Clifford group.
-
-    Args:
-        number_of_cliffords (int): Number of Clifford gates in the sequence (excluding the optional inverse).
-        apply_inverse (bool): Whether to append the recovery Clifford that inverts the total sequence.
-        clifford_group (int): Specifies which Clifford group to use. 
-                              1 for single-qubit (24 elements), 2 for two-qubit (11,520 elements).
-        interleaving_clifford_idx (Optional[int]): Optional ID for interleaving a specific Clifford gate.
-        seed (Optional[int]): Optional seed for reproducibility.
-
-    Returns:
-        np.ndarray: Array of Clifford indices representing the randomized benchmarking sequence.
-
-    Raises:
-        ValueError: If `number_of_cliffords` is negative.
-        NotImplementedError: If an unsupported Clifford group is specified.
-    """
-    if number_of_cliffords < 0:
-        raise ValueError("Number of Cliffords can't be negative.")
-
-    clifford_classes = {
-        1: (24, SingleQubitClifford),
-        2: (11_520, TwoQubitClifford),
-    }
-
-    if clifford_group not in clifford_classes:
-        raise NotImplementedError("Only one- and two-qubit Clifford groups (1 or 2) are supported.")
-
-    group_size, CliffordClass = clifford_classes[clifford_group]
-
-    rng = np.random.default_rng(seed)
-    clifford_indices = rng.integers(low=0, high=group_size, size=number_of_cliffords)
-
-    # Add interleaving Clifford if applicable
-    if interleaved_clifford_idx is not None:
-        clifford_indices = add_interleaved_clifford(clifford_indices, interleaved_clifford_idx)
-
-    # Add inverse Clifford if applicable
-    if apply_inverse:
-        clifford_indices = add_inverse_clifford(clifford_indices, CliffordClass)
-
-    return clifford_indices
-
-def randomized_benchmarking_circuit(
-    clifford_indices: np.ndarray, 
-    num_qubits: int=1,
-    clifford_group: Literal[1, 2] = 1,
-    targets: Union[List[int],int]=0,
-) -> QubitCircuit:
-    """
-    Generates a randomized benchmarking circuit from a sequence of Clifford indices.
-
-    Args:
-        clifford_indices (np.ndarray): Array of Clifford indices.
-        num_qubits (int): Number of qubits in the circuit.
-        targets (Union[List[int],int]): Target qubits for the Clifford sequence.
-
-    Returns:
-        QubitCircuit: The randomized benchmarking circuit.
-    """
+    Implementation of Clifford-based Randomized Benchmarking (RB) for quantum gates.
     
-    clifford_groups = {
-        1: SingleQubitClifford,
-        2: TwoQubitClifford,
-    }
+    This class supports standard and interleaved randomized benchmarking for one and 
+    two-qubit Clifford groups. It generates random Clifford sequences, converts them to
+    quantum circuits with physical gates.
     
-    if clifford_group not in clifford_groups:
-        raise NotImplementedError("Only one- and two-qubit Clifford groups (1 or 2) are supported.")
-    
-    if num_qubits < 1:
-        raise ValueError("Number of Qubits must be >=1.")
-    
+    Attributes:
+        clifford_group (int): Specifies which Clifford group to use (1 for single-qubit, 2 for two-qubit)
+        CliffordClass (Type): The class representing Clifford operations for the chosen group
+    """
 
-    CliffordClass = clifford_groups[clifford_group]
-    
-    if not isinstance(targets, list):
-        targets = [targets] # Make targets into a list
-    
-    qubit_map = {f"q{idx}": target for idx, target in enumerate(targets)}
-    operation_map = {
-        "X180": lambda q: RX(targets=qubit_map[q], arg_value=np.pi),
-        "X90": lambda q: RX(targets=qubit_map[q], arg_value=np.pi/2),
-        "Y180": lambda q: RY(targets=qubit_map[q], arg_value=np.pi),
-        "Y90": lambda q: RY(targets=qubit_map[q], arg_value=np.pi/2),
-        "mX90": lambda q: RX(targets=qubit_map[q], arg_value=-np.pi/2),
-        "mY90": lambda q: RY(targets=qubit_map[q], arg_value=-np.pi/2),
-        "CZ": lambda q: CZ(controls=qubit_map[q[0]], targets=qubit_map[q[1]]),
-    }
+    def __init__(self, clifford_group: Literal[1, 2] = 1) -> None:
+        """
+        Initialize the RandomizedBenchmarking class.
+        
+        Args:
+            clifford_group (Literal[1, 2]): Specifies which Clifford group to use.
+                1 for single-qubit (24 elements), 2 for two-qubit (11,520 elements).
+        
+        Raises:
+            NotImplementedError: If an unsupported Clifford group is specified.
+        """
+        clifford_classes = {
+            1: SingleQubitClifford,
+            2: TwoQubitClifford,
+        }
+        if clifford_group not in clifford_classes:
+            raise NotImplementedError("Only one- and two-qubit Clifford groups (1 or 2) are supported.")
 
-    # Initialize the circuit
-    circuit = QubitCircuit(num_qubits)
+        self.CliffordClass = clifford_classes[clifford_group]
+        self.clifford_group = clifford_group
 
-    # Decompose Clifford sequence into physical gates
-    for clifford_idx in clifford_indices:
-        # If interleaved clifford idx is 10_4368, use CZ gate
-        if clifford_idx == 10_4368:
-            circuit.add_gate(CZ(controls=targets[0], targets=targets[1]))
+    def __repr__(self) -> str:
+        return f"RandomizedBenchmarking(clifford_group={self.clifford_group})"
+
+    def _calculate_net_clifford(
+            self,    
+            clifford_indices: np.ndarray,
+        ) -> "Clifford":
+        """
+        Calculate the net-clifford from a list of cliffords indices.
+
+        Args:
+            clifford_indices (np.ndarray): Array of integers specifying the Cliffords.
+
+        Returns:
+            net_clifford: a `Clifford` object containing the net-clifford.
+                the Clifford index is contained in the Clifford.idx attribute.
+
+        Note: the order corresponds to the order in a pulse sequence but is
+            the reverse of what it would be in a chained dot product.
+        """
+
+        # Calculate the net clifford
+        net_clifford = self.CliffordClass(0) # assumes element 0 is the Identity
+        for idx in clifford_indices:
+            clifford = self.CliffordClass(idx)
+
+            # order of operators applied in is right to left, therefore
+            # the new operator is applied on the left side.
+            net_clifford = clifford * net_clifford
+
+        return net_clifford
+
+    def _add_interleaved_clifford_idx(
+            self,
+            clifford_sequence: np.ndarray, 
+            interleaved_clifford_idx: int
+        ) -> np.ndarray:
+        """
+        Adds the interleaved Clifford gate index to the sequence.
+
+        Args:
+            clifford_sequence (np.ndarray): Array of Clifford indices.
+            interleaved_clifford_idx (int): Interleaved Clifford index.
+
+        Returns:
+            np.ndarray: Clifford sequence with interleaved Clifford.
+        """
+        interleaved_sequence = np.empty(clifford_sequence.size * 2, dtype=int)
+        interleaved_sequence[0::2] = clifford_sequence
+        interleaved_sequence[1::2] = interleaved_clifford_idx
+        return interleaved_sequence
+
+    def _add_inverse_clifford_idx(
+        self,
+        clifford_sequence: np.ndarray,
+    ) -> np.ndarray:
+        """
+        Finds and adds the inverse of the total sequence to the end of the sequence.
+
+        Args:
+            clifford_sequence (np.ndarray): Array of Clifford indices.
+
+        Returns:
+            np.ndarray: Array with appended inverse Clifford index.
+        """
+
+        # Calculate the net Clifford
+        net_clifford = self._calculate_net_clifford(clifford_sequence)
+        # Get the inverse of the net clifford to find the Clifford that inverts the sequence
+        inverse_clifford = net_clifford.get_inverse() 
+        return np.append(clifford_sequence, inverse_clifford.idx)
+    
+    def _get_interleaved_clifford_idx(
+        self,
+        interleaved_clifford_gate: Optional[Union[Gate, QubitCircuit]],
+    ) -> int:
+        """
+        Get the index of the interleaved Clifford gate.
+
+        Args:
+            interleaved_clifford (Optional[Union[Gate, QubitCircuit]]): The interleaved Clifford gate.
+            CliffordClass (Type["Clifford"]): The class of the Clifford group used.
+
+        Returns:
+            int: The index of the interleaved Clifford gate.
+        """
+        # Get the unitary representation of the interleaved Clifford gate
+        if isinstance(interleaved_clifford_gate, QubitCircuit):
+            interleaved_clifford_unitary = interleaved_clifford_gate.compute_unitary()
+        elif isinstance(interleaved_clifford_gate, Gate):
+            interleaved_clifford_unitary = interleaved_clifford_gate.get_compact_qobj()
         else:
-            cl_decomp = CliffordClass(clifford_idx).gate_decomposition
+            raise ValueError(f"interleaved_clifford must be {QubitCircuit} or {Gate}.")
+        
+        # Check that the unitary dimension matches the clifford group
+        if interleaved_clifford_unitary.shape[0] != 2**self.clifford_group:
+            raise ValueError(f"Interleaved Clifford unitary dimension {interleaved_clifford_unitary.shape[0]} does not match the dimension of clifford group {self.clifford_group}.")
+        
+        # Convert the unitary to a PTM and find the corresponding Clifford index
+        ptm = unitary_to_ptm(interleaved_clifford_unitary)
+        interleaved_clifford_idx = self.CliffordClass.find_clifford_index(ptm)
+        return interleaved_clifford_idx
+    
+    def _add_interleaved_gate(self, circuit: QubitCircuit, gate: Union[Gate, QubitCircuit]):
+        """Adds an interleaved gate or circuit to the given QubitCircuit."""
+        if isinstance(gate, QubitCircuit):
+            circuit.add_circuit(gate)
+        elif isinstance(gate, Gate):
+            circuit.add_gate(gate)
+        else:
+            raise ValueError(f"interleaved_clifford_gate must be a {Gate} or {QubitCircuit}.")
+    
+    def _gate_decomposition(
+            self,
+            clifford_indices: np.ndarray,
+            interleaved_clifford_gate: Optional[Union[Gate, QubitCircuit]] = None,
+    ) -> QubitCircuit:
+        """
+        Decomposes a sequence of Clifford indices into physical gates.
+        Args:
+            clifford_indices (np.ndarray): Array of Clifford indices.
+            interleaved_clifford (Optional[Tuple[Union[Gate, QubitCircuit], int]]): Interleaved Clifford gate and its index.
+
+        Returns:
+            QubitCircuit: The physical circuit with gates.
+        """
+        
+        # Create a mapping of qubit indices to qubit names
+        qubit_map = {f"q{idx}": idx for idx in range(self.clifford_group)}
+        operation_map = {
+            "X180": lambda q: RX(targets=qubit_map[q], arg_value=np.pi),
+            "X90": lambda q: RX(targets=qubit_map[q], arg_value=np.pi/2),
+            "Y180": lambda q: RY(targets=qubit_map[q], arg_value=np.pi),
+            "Y90": lambda q: RY(targets=qubit_map[q], arg_value=np.pi/2),
+            "mX90": lambda q: RX(targets=qubit_map[q], arg_value=-np.pi/2),
+            "mY90": lambda q: RY(targets=qubit_map[q], arg_value=-np.pi/2),
+            "CZ": lambda q: CZ(controls=qubit_map[q[0]], targets=qubit_map[q[1]]),
+        }
+
+        # Initialize the circuit
+        circuit = QubitCircuit(self.clifford_group)
+
+        for i, clifford_idx in enumerate(clifford_indices):
+            if interleaved_clifford_gate is not None and (i+1) % 2 == 0:
+                self._add_interleaved_gate(circuit, interleaved_clifford_gate)
+                continue
+ 
+            cl_decomp = self.CliffordClass(clifford_idx).gate_decomposition
             if cl_decomp is None:
                 raise ValueError(f"Clifford gate {clifford_idx} has no decomposition.")
             for gate, q in cl_decomp:
                 if gate == "I":
                     continue
-                
                 operation = operation_map[gate](q)
                 circuit.add_gate(operation)
+        return circuit
 
-    return circuit
-    
+    def _randomized_benchmarking_sequence(
+        self,
+        number_of_cliffords: int,
+        apply_inverse: bool = True,
+        interleaved_clifford_idx: Optional[int] = None,
+        seed: Optional[int] = None,
+    ) -> np.ndarray:
+        """
+        Generates a randomized benchmarking sequence using the one- or two-qubit Clifford group.
 
-if __name__ == "__main__":
-    # Example usage
-    sequence, net_clifford = randomized_benchmarking_sequence(10, apply_inverse=True)
-    print("Randomized Benchmarking Sequence:", sequence)
-    print("Net Clifford Index:", net_clifford.idx)
+        Args:
+            number_of_cliffords (int): Number of Clifford gates in the sequence (excluding the optional inverse).
+            apply_inverse (bool): Whether to append the recovery Clifford that inverts the total sequence.
+            clifford_group (int): Specifies which Clifford group to use. 
+                                1 for single-qubit (24 elements), 2 for two-qubit (11,520 elements).
+            interleaving_clifford_idx (Optional[int]): Optional ID for interleaving a specific Clifford gate.
+            seed (Optional[int]): Optional seed for reproducibility.
+
+        Returns:
+            np.ndarray: Array of Clifford indices representing the randomized benchmarking sequence.
+
+        Raises:
+            ValueError: If `number_of_cliffords` is negative.
+            NotImplementedError: If an unsupported Clifford group is specified.
+        """
+        if number_of_cliffords < 1:
+            raise ValueError("Number of Cliffords must at least be 1.")
+        
+        group_size = self.CliffordClass.GROUP_SIZE
+        rng = np.random.default_rng(seed)
+        clifford_indices = rng.integers(low=0, high=group_size, size=number_of_cliffords)
+
+        # Add interleaving Clifford if applicable
+        if interleaved_clifford_idx is not None:
+            clifford_indices = self._add_interleaved_clifford_idx(
+                clifford_sequence=clifford_indices, 
+                interleaved_clifford_idx=interleaved_clifford_idx
+            )
+
+        # Add inverse Clifford if applicable
+        if apply_inverse:
+            clifford_indices = self._add_inverse_clifford_idx(clifford_sequence=clifford_indices)
+
+        return clifford_indices
+
+    def randomized_benchmarking_circuit(
+        self,
+        number_of_cliffords: int,
+        apply_inverse: bool = True,
+        interleaved_clifford_gate: Optional[Union[Gate, QubitCircuit]] = None,
+        seed: Optional[int] = None,
+    ) -> QubitCircuit:
+        """
+        Generates a randomized benchmarking circuit from a sequence of Clifford indices.
+
+        Args:
+            number_of_cliffords (int): Number of Cliffords in the sequence.
+            apply_inverse (bool): Whether to append the recovery Clifford that inverts the total sequence.
+            interleaved_clifford_gate (Optional[Union[Gate, QubitCircuit]]): Optional interleaved Clifford gate or circuit.
+            seed (Optional[int]): Optional seed for reproducibility.
+
+        Returns:
+            QubitCircuit: The randomized benchmarking circuit.
+        """
+        if interleaved_clifford_gate is not None:
+            # get interleaved clifford index
+            interleaved_clifford_idx = self._get_interleaved_clifford_idx(interleaved_clifford_gate)
+        else:
+            interleaved_clifford_idx = None
+
+        # Generate the randomized benchmarking sequence
+        clifford_indices = self._randomized_benchmarking_sequence(
+            number_of_cliffords=number_of_cliffords,
+            apply_inverse=apply_inverse,
+            interleaved_clifford_idx=interleaved_clifford_idx,
+            seed=seed,
+        )
+
+        # Create the randomized benchmarking circuit
+        circuit = self._gate_decomposition(
+            clifford_indices=clifford_indices, 
+            interleaved_clifford_gate=interleaved_clifford_gate,
+        )
+        return circuit
