@@ -6,7 +6,7 @@ repo_name: "aqp-mc2-chalmers/chalmers-qubit"
 nav:
 - Introduction:
   - Overview: index.md
-- Simulator:
+- User Guide:
   - Model: sarimner/transmons.md
   - Quantum Gates: sarimner/quantum_gates.md
   - Noise: sarimner/noise.md
@@ -14,6 +14,7 @@ nav:
   - Quantum Gates: examples/quantum_gates.ipynb
   - Relaxation: examples/relaxation.ipynb
   - Comparison of coherence limits: examples/comparison_of_coherence_limits.ipynb
+  - Randomized Benchmarking: examples/randomized_benchmarking.ipynb
 - API Documentation: reference.md
 
 theme:

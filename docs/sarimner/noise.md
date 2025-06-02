@@ -89,4 +89,5 @@ sarimner = SarimnerProcessor(model=model, compiler, noise=noise)
 ```
 
 ## Example
-For examples on how to use these noise models check out [relaxation.ipynb](https://github.com/aqp-mc2-chalmers/chalmers-qubit/blob/main/examples/relaxation.ipynb).
+
+For examples on how to use these noise models check out [relaxation.ipynb](https://github.com/aqp-mc2-chalmers/chalmers-qubit/blob/main/docs/examples/relaxation.ipynb).
