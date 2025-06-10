@@ -4,14 +4,14 @@ Quantum processors operate based on the manipulation of qubits. To simulate how 
 
 \begin{equation}
 \label{eq:transmon}
-\frac{H}{\hbar} = \sum*{i=1}^N(\omega*{q_i} a_i^\dagger a_i + \frac{\alpha_i}{2} a_i^{\dagger 2} a_i^2),
+\frac{H}{\hbar} = \sum\_{i=1}^N(\omega\*{q_i} a_i^\dagger a_i + \frac{\alpha_i}{2} a_i^{\dagger 2} a_i^2),
 \end{equation}
 
 where $N$ is the number of qubits, $\omega_{q_i}$ is the qubit frequency and $\alpha_i$ is the anhamronicity for the $i$:th qubit. We often work in a rotating frame to simplify calculations. This involves applying a transformation $U(t) = e^{i\omega_r t a^\dagger a}$, where $\omega_r$ is the rotating frame frequency. In this frame, the Hamiltonian becomes:
 
 \begin{equation}
-\label{eq:transmon*rotating}
-\frac{H^R}{\hbar} = \sum*{i=1}^N(\Delta_i a_i^\dagger a_i + \frac{\alpha_i}{2} a_i^{\dagger 2} a^2_i).
+\label{eq:transmon\*rotating}
+\frac{H^R}{\hbar} = \sum\_{i=1}^N(\Delta_i a_i^\dagger a_i + \frac{\alpha_i}{2} a_i^{\dagger 2} a^2_i).
 \end{equation}
 
 Here $\Delta_i = \omega_{q_i} - \omega_{r_i}$ represents the detuning of the i-th qubit, which is the difference between its intrinsic frequency and the rotating frame frequency.

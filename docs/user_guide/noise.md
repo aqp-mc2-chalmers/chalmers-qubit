@@ -6,7 +6,7 @@ Decoherence refers to the loss of quantum information due to interactions with t
 
 ### Longitudinal decoherence
 
-The $T_1$ **relaxation time** describes the decay of a qubit's excited state population. It is characterized by the collapse operator $\sqrt{\Gamma _1} \hat a$, where $\hat a$ is the annihilation operator and $\Gamma_1 = 1/T_1$ is the decay rate. This leads to an exponential decay of the population of first excited state proportional of $\exp(-\Gamma _1 t)$.
+The $T_1$ **relaxation time** describes the decay of a qubit's excited state population. It is characterized by the collapse operator $\sqrt{\Gamma_1} \hat a$, where $\hat a$ is the annihilation operator and $\Gamma_1 = 1/T_1$ is the decay rate. This leads to an exponential decay of the population of first excited state proportional of $\exp(-\Gamma_1 t)$.
 
 ### Transversal decoherence
 

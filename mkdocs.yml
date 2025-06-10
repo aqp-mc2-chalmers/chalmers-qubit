@@ -7,9 +7,9 @@ nav:
 - Introduction:
   - Overview: index.md
 - User Guide:
-  - Model: sarimner/transmons.md
-  - Quantum Gates: sarimner/quantum_gates.md
-  - Noise: sarimner/noise.md
+  - Model: user_guide/transmons.md
+  - Quantum Gates: user_guide/quantum_gates.md
+  - Noise: user_guide/noise.md
 - Tutorials:
   - Quantum Gates: examples/quantum_gates.ipynb
   - Relaxation: examples/relaxation.ipynb
