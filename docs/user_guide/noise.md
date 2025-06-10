@@ -14,9 +14,9 @@ The $T_2$ **dephasing time** describes the loss of phase coherence, meaning the 
 
 To make sure that the overall phase damping is $\exp(-\frac{t}{T_2})$, we use the collapse operator $\sqrt{\frac{\Gamma_\varphi}{2}} 2 \hat n = \frac{1}{\sqrt{2T_\varphi}} 2 \hat n$, where $\hat n$ is the number operator and
 
-\begin{equation}
-\Gamma*\varphi \equiv \frac{1}{T*\varphi} = \frac{1}{T_2} - \frac{1}{2T_1}.
-\end{equation}
+$$
+\Gamma_\varphi \equiv \frac{1}{T_\varphi} = \frac{1}{T_2} - \frac{1}{2T_1}.
+$$
 
 This equation also highlights why $T_2$ is always lesss than or equal to twice $T_1$ $(T_2\leq 2T_1)$.
 

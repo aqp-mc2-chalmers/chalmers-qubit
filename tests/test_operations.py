@@ -1,6 +1,6 @@
 import unittest
 from qutip import tensor, basis
-from chalmers_qubit.base.operations import project_on_qubit
+from chalmers_qubit.utils.operations import project_on_qubit
 
 class TestQuditProjection(unittest.TestCase):
 

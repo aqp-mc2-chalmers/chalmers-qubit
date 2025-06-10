@@ -3,7 +3,7 @@ import numpy as np
 from qutip import basis, destroy, Options, Qobj, fidelity, tensor
 from qutip_qip.circuit import QubitCircuit
 from chalmers_qubit.devices.sarimner import SarimnerModel, SarimnerProcessor, DecoherenceNoise, ZZCrossTalk
-from chalmers_qubit.base.operations import project_on_qubit
+from chalmers_qubit.utils.operations import project_on_qubit
 
 
 def _bloch_redfield(psi: Qobj, t1, t2, t: float) -> Qobj:
