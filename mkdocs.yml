@@ -1,124 +1,155 @@
+# MkDocs configuration file for Chalmers Qubit Simulator documentation
+# This configuration sets up a Material Design themed documentation site
+
+# Basic site information
 site_name: Chalmers Qubit Simulator
 site_description: "A package to simulate quantum circuits on transmons."
 site_url: "https://aqp-mc2-chalmers.github.io/chalmers-qubit/"
 repo_url: "https://github.com/aqp-mc2-chalmers/chalmers-qubit"
 repo_name: "aqp-mc2-chalmers/chalmers-qubit"
+
+# Navigation structure - defines the sidebar menu and page organization
 nav:
-- Introduction:
-  - Overview: index.md
-- User Guide:
-  - Model: sarimner/transmons.md
-  - Quantum Gates: sarimner/quantum_gates.md
-  - Noise: sarimner/noise.md
-- Tutorials:
-  - Quantum Gates: examples/quantum_gates.ipynb
-  - Relaxation: examples/relaxation.ipynb
+- Introduction:  # Top-level section
+  - Overview: index.md  # Landing page
+- User Guide:  # Documentation section
+  - Model: user_guide/transmons.md  # Explains the transmon model
+  - Quantum Gates: user_guide/quantum_gates.md  # Gate documentation
+  - Noise: user_guide/noise.md  # Noise modeling information
+- Tutorials:  # Example notebooks section
+  - Quantum Gates: examples/quantum_gates.ipynb  # Interactive tutorial
+  - Relaxation: examples/relaxation.ipynb  # Relaxation examples
   - Comparison of coherence limits: examples/comparison_of_coherence_limits.ipynb
   - Randomized Benchmarking: examples/randomized_benchmarking.ipynb
-- API Documentation: reference.md
+- API Documentation:  # Auto-generated API docs using mkdocstrings
+  - Devices:
+    - Sarimner: reference/devices/sarimner/sarimner.md  # Device-specific documentation
+  - Utils:
+    - Gates: reference/utils/gates.md  # Gate functions
+    - Operations: reference/utils/operations.md  # Operation functions
+    - RandomizedBenchmarking: reference/utils/randomized_benchmarking/randomized_benchmarking.md  # RB-specific utilities
 
+# Theme configuration using Material Design
 theme:
-  name: material
-  language: en 
+  name: material  # Uses mkdocs-material theme
+  language: en
   palette:
-
-    # Palette toggle for automatic mode
+    # Three-way color scheme toggle (auto/light/dark)
+    # Palette toggle for automatic mode (follows system preference)
     - media: "(prefers-color-scheme)"
-      primary: indigo
-      accent: indigo
+      primary: indigo  # Primary color for headers, links, etc.
+      accent: indigo   # Accent color for highlights
       toggle:
         icon: material/brightness-auto
         name: Switch to light mode
-  
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
-      scheme: default
+      scheme: default  # Light color scheme
       primary: indigo
       accent: indigo
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-
-    # Palette toggle for dark mode
+    # Palette toggle for dark mode  
     - media: "(prefers-color-scheme: dark)"
-      scheme: slate
+      scheme: slate    # Dark color scheme
       primary: indigo
       accent: indigo
       toggle:
         icon: material/brightness-4
         name: Switch to system preference
-
+  
+  # Feature flags to enable various UI enhancements
   features:
-    - content.code.copy
-    - search.suggest
-    - search.highlight
-    - content.tabs.link
-    - navigation.indexes
-    - navigation.expand
-    - navigation.sections
-    - navigation.tabs
-    - navigation.tabs.sticky
-    - navigation.top
-    - toc.follow
+    - content.code.copy          # Add copy button to code blocks
+    - search.suggest             # Show search suggestions
+    - search.highlight           # Highlight search terms in results
+    - content.tabs.link          # Link content tabs across pages
+    - navigation.indexes         # Enable navigation indexes
+    #- navigation.expand          # Expand navigation by default
+    - navigation.path            # Show full paths in navigation
+    #- navigation.sections       # Group navigation into sections
+    - navigation.tabs            # Show top-level navigation as tabs
+    - navigation.tabs.sticky     # Keep navigation tabs visible when scrolling
+    - navigation.top             # Add "back to top" button
+    - toc.follow                 # Highlight current section in table of contents
+    #- toc.integrate              # Integrate table of contents into content
 
+# Plugin configuration
 plugins:
-  - search
-  - mkdocs-jupyter
+  - search  # Enable search functionality
+  - mkdocs-jupyter  # Support for Jupyter notebooks in documentation
+  
+  # API documentation generation from Python docstrings
   - mkdocstrings:
-      default_handler: python
+      default_handler: python  # Use Python handler for docstring parsing
       handlers:
         python:
+          # External inventory files for cross-references
           inventories:
-            - https://docs.python.org/3/objects.inv
-            - https://qutip-qip.readthedocs.io/en/stable/objects.inv
-            - https://qutip.readthedocs.io/en/latest/objects.inv
+            - https://docs.python.org/3/objects.inv          # Python standard library
+            - https://qutip-qip.readthedocs.io/en/stable/objects.inv  # QuTiP-QIP docs
+            - https://qutip.readthedocs.io/en/latest/objects.inv      # QuTiP docs
+          
+          # Docstring processing options
           options:
-            docstring_style: numpy
-            filters: ["!^_"]
-            heading_level: 2
-            inherited_members: true # An explicit list of inherited members 
-            merge_init_into_class: true
-            preload_modules: [mkdocstrings, qutip_qip]
-            separate_signature: true
-            show_root_heading: true
-            show_root_full_path: false # Show the full Python path for the root object heading.
-            show_bases: True # Show the base classes of a class.
-            show_source: false # Show the source code of this object
-            show_signature_annotations: true
-            show_symbol_type_heading: true
-            show_symbol_type_toc: true
-            signature_crossrefs: true
-            summary: true
-            unwrap_annotated: true
+            docstring_style: numpy           # Use NumPy docstring format
+            filters: ["!^_"]                  # Exclude private members (starting with _)
+            heading_level: 2                 # Start API headings at H2 level
+            inherited_members: true          # Include inherited class members
+            merge_init_into_class: true      # Show __init__ method in class docs
+            preload_modules: [mkdocstrings, qutip_qip]  # Preload these modules
+            separate_signature: true         # Show method signatures separately
+            show_root_heading: true          # Show the main object heading
+            show_root_full_path: false       # Don't show full Python path in headings
+            show_bases: True                 # Show parent classes for inheritance
+            show_source: false               # Don't include source code
+            show_signature_annotations: true # Show type annotations in signatures
+            show_symbol_type_heading: true   # Show if symbol is class/function/etc.
+            show_symbol_type_toc: true       # Include symbol types in TOC
+            signature_crossrefs: true        # Create links in signatures
+            summary: true                    # Show summary line from docstrings
+            unwrap_annotated: true           # Unwrap typing.Annotated types
+
+  # Bibliography support for citations
   - bibtex:
-      bib_file: "docs/bibliography/references.bib"
+      bib_file: "docs/bibliography/references.bib"  # BibTeX file location
 
+# Markdown extensions for enhanced functionality
 markdown_extensions:
-  - footnotes
-  # Enable MathJax
+  - footnotes  # Enable footnote syntax
+  
+  # MathJax support for mathematical expressions
   - pymdownx.arithmatex:
-      generic: true
-
+      generic: true  # Use generic math delimiters
+  
+  # Code syntax highlighting
   - pymdownx.highlight:
-      anchor_linenums: true
-      line_spans: __span
-      pygments_lang_class: true
-      linenums: true # show line numbers
-  - pymdownx.inlinehilite
-  - pymdownx.snippets
-  - pymdownx.superfences
-  # Add option to align images and add captions
-  - attr_list
-  - md_in_html
+      anchor_linenums: true      # Add anchors to line numbers
+      line_spans: __span         # Wrap lines in spans for styling
+      pygments_lang_class: true  # Add language class to code blocks
+      linenums: true             # Show line numbers by default
+  
+  - pymdownx.inlinehilite  # Inline code highlighting
+  - pymdownx.snippets      # Include external code snippets
+  - pymdownx.superfences   # Enhanced code fences with features
+  
+  # Image and HTML enhancements
+  - attr_list   # Add attributes to elements (for image alignment, etc.)
+  - md_in_html  # Allow Markdown inside HTML tags
 
-copyright: Copyright &copy; 2024
+# Footer copyright notice
+copyright: Copyright &copy; 2025
 
+# Additional site configuration
 extra:
   social:
-  - icon: fontawesome/brands/github
-    link: https://github.com/aqp-mc2-chalmers/chalmers-qubit
+    # Social media links in footer
+    - icon: fontawesome/brands/github
+      link: https://github.com/aqp-mc2-chalmers/chalmers-qubit
 
+# JavaScript files for enhanced functionality
 extra_javascript:
-  - javascripts/mathjax.js
-  - https://polyfill.io/v3/polyfill.min.js?features=es6
-  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+  - javascripts/mathjax.js  # Custom MathJax configuration
+  - https://polyfill.io/v3/polyfill.min.js?features=es6  # ES6 polyfills
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js  # MathJax library

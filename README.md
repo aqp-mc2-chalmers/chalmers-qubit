@@ -2,44 +2,43 @@
 
 [![Tests](https://github.com/aqp-mc2-chalmers/chalmers-qubit/actions/workflows/tests.yml/badge.svg)](https://github.com/aqp-mc2-chalmers/chalmers-qubit/actions/workflows/tests.yml) [![documentation](https://img.shields.io/badge/docs-mkdocs%20material-blue.svg?style=flat)](https://squidfunk.github.io/mkdocs-material/) [![license](https://img.shields.io/badge/License-BSD_3--Clause-orange.svg)](https://opensource.org/licenses/BSD-3-Clause) <a href="https://pypi.org/project/chalmers-qubit/"><img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/chalmers-qubit"></a>
 
-
 A simulation framework for Chalmers devices that can be used to simulate the running of quantum algorithms with realistic noise. We follow [qutip-qip](https://qutip-qip.readthedocs.io/en/stable/) to build a processor that can take in a quantum circuit (e.g., a QASM cicruit) and performs a master equation simulation adding noise such as T1 and T2. It is also possible to perform a Monte-Carlo trajectory simulation and customize the processor to add various types of noise such as [ZZCrossTalk](https://qutip-qip.readthedocs.io/en/latest/apidoc/qutip_qip.noise.html#qutip_qip.noise.ZZCrossTalk).
 
-The package is under development and testing. 
+The package is under development and testing.
 
 ## Installation
 
 The main requirement to use this package is [qutip-qip](https://qutip-qip.readthedocs.io/en/stable/) based on [qutip](https://qutip-qip.readthedocs.io/en/stable/): The Quantum Toolbox in Python. The requirements are already specified in the `setup.cfg` file and you can install the package `chalmers_qubit` simply by downloading this folder or cloning this repository and running:
 
-``` zsh
+```zsh
 pip install .
 ```
 
 to get the minimal installation. You can instead use `'.[full]'` to install the package with all optional dependencies, such as matplotlib. Moreover, it might be beneficial to install an editable version. In the editable version, changes to the code are reflected system-wide without requiring a reinstallation.
 
-``` zsh
+```zsh
 pip install -e '.[full]'
 ```
 
 If you do not care about making changes to the source code and just want to try out the package (e.g., from Google Colab), you can do a git+ install with
 
-``` zsh
+```zsh
 pip install git+https://github.com/aqp-mc2-chalmers/chalmers-qubit.git
 ```
 
 ## Usage
 
-The usage of the package follows [qutip-qip](https://qutip-qip.readthedocs.io/en/stable/) where first, a quantum circuit is defined using [`qutip-qip`](https://qutip-qip.readthedocs.io/en/stable/qip-simulator.html) and then run on one of the custom Chalmers processors, e.g., the processor called sarimner. The custom processor is defined in `chalmers_qubit.sarimner.processor` and can be initialized with a `model`, `compiler` and `noise`. 
+The usage of the package follows [qutip-qip](https://qutip-qip.readthedocs.io/en/stable/) where first, a quantum circuit is defined using [`qutip-qip`](https://qutip-qip.readthedocs.io/en/stable/qip-simulator.html) and then run on one of the custom Chalmers processors, e.g., the processor called sarimner. The custom processor is defined in `chalmers_qubit.devices.sarimner.processor` and can be initialized with a `model`, `compiler` and `noise`.
 
 Note that only gates with compilation instructions in `chalmers_qubit/sarimner/compiler.py` will work for this particular processor.
 
-Notebooks exploring the usage of the simulator is available in `docs/examples/`. 
+Notebooks exploring the usage of the simulator is available in `docs/examples/`.
 
-``` python
+```python
 import numpy as np
 from qutip import basis, tensor
 from qutip_qip.circuit import QubitCircuit
-from chalmers_qubit.sarimner import (
+from chalmers_qubit.devices.sarimner import (
     SarimnerProcessor,
     SarimnerModel,
     SarimnerCompiler,

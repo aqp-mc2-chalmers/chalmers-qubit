@@ -3,9 +3,9 @@ import numpy as np
 from qutip import basis, tensor, fidelity, average_gate_fidelity
 from qutip_qip.circuit import QubitCircuit
 from qutip_qip.operations import rz
-from chalmers_qubit.sarimner import SarimnerModel, SarimnerProcessor, SarimnerCompiler
-from chalmers_qubit.base.operations import project_on_qubit
-from chalmers_qubit.base.gates import cczs
+from chalmers_qubit.devices.sarimner import SarimnerModel, SarimnerProcessor, SarimnerCompiler
+from chalmers_qubit.utils.operations import project_on_qubit
+from chalmers_qubit.utils.gates import cczs
 
 import warnings
 warnings.simplefilter(action="ignore", category=FutureWarning)
