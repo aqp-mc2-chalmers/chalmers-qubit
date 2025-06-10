@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 from qutip import basis, destroy, Options, Qobj, fidelity, tensor
 from qutip_qip.circuit import QubitCircuit
-from chalmers_qubit.sarimner import SarimnerModel, SarimnerProcessor, DecoherenceNoise, ZZCrossTalk
+from chalmers_qubit.devices.sarimner import SarimnerModel, SarimnerProcessor, DecoherenceNoise, ZZCrossTalk
 from chalmers_qubit.base.operations import project_on_qubit
 
 

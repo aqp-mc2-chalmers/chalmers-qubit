@@ -10,7 +10,7 @@ from qutip_qip.device import Processor, Model
 from qutip_qip.device.processor import _pulse_interpolate
 from qutip_qip.compiler import GateCompiler
 
-from chalmers_qubit.sarimner.compiler import SarimnerCompiler
+from chalmers_qubit.devices.sarimner.compiler import SarimnerCompiler
 
 
 class SarimnerProcessor(Processor):
