@@ -21,13 +21,7 @@ nav:
   - Relaxation: examples/relaxation.ipynb  # Relaxation examples
   - Comparison of coherence limits: examples/comparison_of_coherence_limits.ipynb
   - Randomized Benchmarking: examples/randomized_benchmarking.ipynb
-- API Documentation:  # Auto-generated API docs using mkdocstrings
-  - Devices:
-    - Sarimner: reference/devices/sarimner/sarimner.md  # Device-specific documentation
-  - Utils:
-    - Gates: reference/utils/gates.md  # Gate functions
-    - Operations: reference/utils/operations.md  # Operation functions
-    - RandomizedBenchmarking: reference/utils/randomized_benchmarking/randomized_benchmarking.md  # RB-specific utilities
+- API Documentation: reference/
 
 # Theme configuration using Material Design
 theme:
@@ -78,13 +72,24 @@ theme:
 # Plugin configuration
 plugins:
   - search  # Enable search functionality
-  - mkdocs-jupyter  # Support for Jupyter notebooks in documentation
-  
+  - mkdocs-jupyter:
+      execute: false
+      include_requirejs: true
+      custom_mathjax_url: "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS_CHTML-full,Safe"
+
+  - gen-files:
+      scripts:
+        - scripts/gen_ref_pages.py  # or any other name or path
+
+  - literate-nav:
+      nav_file: SUMMARY.md
+
   # API documentation generation from Python docstrings
   - mkdocstrings:
       default_handler: python  # Use Python handler for docstring parsing
       handlers:
         python:
+          paths: [chalmers_qubit]  # Scan this directory for Python modules
           # External inventory files for cross-references
           inventories:
             - https://docs.python.org/3/objects.inv          # Python standard library
@@ -101,7 +106,7 @@ plugins:
             preload_modules: [mkdocstrings, qutip_qip]  # Preload these modules
             separate_signature: true         # Show method signatures separately
             show_root_heading: true          # Show the main object heading
-            show_root_full_path: false       # Don't show full Python path in headings
+            show_root_full_path: true        # Show full Python path in headings
             show_bases: True                 # Show parent classes for inheritance
             show_source: false               # Don't include source code
             show_signature_annotations: true # Show type annotations in signatures
