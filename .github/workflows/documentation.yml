@@ -25,5 +25,5 @@ jobs:
           path: .cache
           restore-keys: |
             mkdocs-material-
-      - run: pip install mkdocs-material mkdocs-bibtex mkdocs-jupyter 'mkdocstrings[python]' qutip-qip
+      - run: pip install mkdocs-material mkdocs-bibtex mkdocs-jupyter mkdocs-gen-files mkdocs-literate-nav 'mkdocstrings[python]' black qutip-qip
       - run: mkdocs gh-deploy --force
