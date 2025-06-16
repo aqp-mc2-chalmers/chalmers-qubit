@@ -1,3 +1,57 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
+requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "chalmers_qubit"
+version = "2.1.1"
+description = "A simulator of the Chalmers device to be used with qutip-qip"
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = "~=3.10"
+license = {file = "LICENSE.txt"}
+authors = [
+  {name = "Pontus Vikstål", email = "vikstal@chalmers.se"},
+  {name = "Shahnawaz Ahmed"},
+]
+classifiers = [
+  "Programming Language :: Python :: 3.10",
+  "Operating System :: OS Independent",
+  "License :: OSI Approved :: BSD License",
+]
+requires-python = "~=3.10"
+dependencies = [
+  "qutip==5.1.1",
+  "qutip-qip==0.4.1",
+  "qutip-qtrl==0.1.5",
+  "matplotlib>=3.9.3",
+]
+
+[project.optional-dependencies]
+graphics = ["matplotlib"]
+dev = ["tox"]
+docs = [
+  "mkdocs-material",
+  "mkdocstrings[python]",
+  "mkdocs-gen-files",
+  "mkdocs-literate-nav",
+  "mkdocs-bibtex",
+  "mkdocs-jupyter",
+  "black",
+]
+full = [
+  "matplotlib",
+  "tox",
+  "mkdocs-material",
+  "mkdocstrings[python]",
+  "mkdocs-gen-files",
+  "mkdocs-literate-nav",
+  "mkdocs-bibtex",
+  "mkdocs-jupyter",
+  "black",
+]
+
+[tool.setuptools]
+zip-safe = false
+
+[tool.setuptools.packages.find]
+include = ["chalmers_qubit*"]
