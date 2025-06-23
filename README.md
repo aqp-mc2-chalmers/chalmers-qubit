@@ -14,7 +14,7 @@ The main requirement to use this package is [qutip-qip](https://qutip-qip.readth
 pip install .
 ```
 
-to get the minimal installation. You can instead use `'.[full]'` to install the package with all optional dependencies, such as matplotlib. Moreover, it might be beneficial to install an editable version. In the editable version, changes to the code are reflected system-wide without requiring a reinstallation.
+to get the minimal installation. However, it might be beneficial to install an editable version. In the editable version, changes to the code are reflected system-wide without requiring a reinstallation.
 
 ```zsh
 pip install -e '.[full]'
