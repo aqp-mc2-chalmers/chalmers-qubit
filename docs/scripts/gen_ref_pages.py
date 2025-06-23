@@ -79,7 +79,7 @@ def should_exclude_path(path: Path, src: Path) -> bool:
 nav = mkdocs_gen_files.Nav()
 
 # Define the root of the project (two levels up from this script)
-root = Path(__file__).parent.parent
+root = Path(__file__).parent.parent.parent
 
 # Define the source directory of the package you want to document
 src = root / "chalmers_qubit"
