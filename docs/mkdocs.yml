@@ -8,6 +8,9 @@ site_url: "https://aqp-mc2-chalmers.github.io/chalmers-qubit/"
 repo_url: "https://github.com/aqp-mc2-chalmers/chalmers-qubit"
 repo_name: "aqp-mc2-chalmers/chalmers-qubit"
 
+docs_dir: .  # Source directory for documentation files
+site_dir: "../site"  # Output directory for built site
+
 # Navigation structure - defines the sidebar menu and page organization
 nav:
 - Introduction:  # Top-level section
@@ -89,7 +92,7 @@ plugins:
       default_handler: python  # Use Python handler for docstring parsing
       handlers:
         python:
-          paths: [chalmers_qubit]  # Scan this directory for Python modules
+          paths: ["../chalmers_qubit"]  # Scan this directory for Python modules
           # External inventory files for cross-references
           inventories:
             - https://docs.python.org/3/objects.inv          # Python standard library
@@ -118,7 +121,7 @@ plugins:
 
   # Bibliography support for citations
   - bibtex:
-      bib_file: "docs/bibliography/references.bib"  # BibTeX file location
+      bib_file: "bibliography/references.bib"  # BibTeX file location
 
 # Markdown extensions for enhanced functionality
 markdown_extensions:

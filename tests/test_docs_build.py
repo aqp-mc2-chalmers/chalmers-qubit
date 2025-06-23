@@ -8,7 +8,7 @@ class test_mkdocs_build(unittest.TestCase):
         project_root = pathlib.Path(__file__).parent.parent.resolve()
         
         result = subprocess.run(
-            ["mkdocs", "build", "--strict"],
+            ["mkdocs", "build", "--strict", "--config-file", "docs/mkdocs.yml"],
             cwd=project_root,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
