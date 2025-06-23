@@ -31,13 +31,13 @@ version = "2.1.2"
 
 [project.optional-dependencies]
 docs = [
-  "mkdocs-material",
-  "mkdocstrings[python]",
-  "mkdocs-gen-files",
-  "mkdocs-literate-nav",
-  "mkdocs-bibtex",
-  "mkdocs-jupyter",
-  "black",
+  "mkdocs-material==9.6.14",
+  "mkdocstrings[python]~=0.29",
+  "mkdocs-gen-files==0.5.0",
+  "mkdocs-literate-nav==0.6.2",
+  "mkdocs-bibtex==4.2.10",
+  "mkdocs-jupyter==0.25.1",
+  "black==25.1.0",
 ]
 
 [project.urls]
