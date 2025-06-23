@@ -1,3 +1,64 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
+requires = ["setuptools>=61.0"]
+
+[project]
+authors = [
+  {name = "Pontus Vikstål", email = "vikstal@chalmers.se"},
+  {name = "Shahnawaz Ahmed"},
+]
+classifiers = [
+  "Programming Language :: Python :: 3.10",
+  "Operating System :: OS Independent",
+  "License :: OSI Approved :: BSD License",
+]
+dependencies = [
+  "qutip==5.1.1",
+  "qutip-qip==0.4.1",
+  "qutip-qtrl==0.1.5",
+  "matplotlib>=3.9.3",
+]
+description = "A simulator of the Chalmers device to be used with qutip-qip"
+keywords = ["superconducting qubits", "pulse simulator", "quantum computing"]
+license = {file = "LICENSE.txt"}
+maintainers = [
+  {name = "Pontus Vikstål", email = "vikstal@chalmers.se"},
+]
+name = "chalmers_qubit"
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = "~=3.10"
+version = "2.1.2"
+
+[project.optional-dependencies]
+docs = [
+  "mkdocs-material==9.6.14",
+  "mkdocstrings[python]~=0.29",
+  "mkdocs-gen-files==0.5.0",
+  "mkdocs-literate-nav==0.6.2",
+  "mkdocs-bibtex==4.2.10",
+  "mkdocs-jupyter==0.25.1",
+  "black==25.1.0",
+]
+
+[project.urls]
+Documentation = "https://aqp-mc2-chalmers.github.io/chalmers-qubit/"
+Homepage = "https://github.com/aqp-mc2-chalmers/chalmers-qubit"
+Repository = "https://github.com/aqp-mc2-chalmers/chalmers-qubit.git"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+# Tox configuration
+[tool.tox]
+env_list = ["py310"]
+isolated_build = true
+requires = ["tox>=4"]
+
+[tool.tox.env_run_base]
+commands = [
+  ["python", "-m", "unittest", "discover", "-s", "tests"],
+]
+deps = [
+  ".[docs]", # Install with docs dependencies for testing
+]
+description = "run unit tests"
