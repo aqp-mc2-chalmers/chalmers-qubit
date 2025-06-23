@@ -17,7 +17,7 @@ pip install .
 to get the minimal installation. However, it might be beneficial to install an editable version. In the editable version, changes to the code are reflected system-wide without requiring a reinstallation.
 
 ```zsh
-pip install -e '.[full]'
+pip install -e .
 ```
 
 If you do not care about making changes to the source code and just want to try out the package (e.g., from Google Colab), you can do a git+ install with
