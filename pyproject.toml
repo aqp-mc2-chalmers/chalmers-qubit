@@ -1,14 +1,8 @@
 [build-system]
-requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
+requires = ["setuptools>=61.0"]
 
 [project]
-name = "chalmers_qubit"
-version = "2.1.1"
-description = "A simulator of the Chalmers device to be used with qutip-qip"
-readme = {file = "README.md", content-type = "text/markdown"}
-requires-python = "~=3.10"
-license = {file = "LICENSE.txt"}
 authors = [
   {name = "Pontus Vikstål", email = "vikstal@chalmers.se"},
   {name = "Shahnawaz Ahmed"},
@@ -18,17 +12,24 @@ classifiers = [
   "Operating System :: OS Independent",
   "License :: OSI Approved :: BSD License",
 ]
-requires-python = "~=3.10"
 dependencies = [
   "qutip==5.1.1",
   "qutip-qip==0.4.1",
   "qutip-qtrl==0.1.5",
   "matplotlib>=3.9.3",
 ]
+description = "A simulator of the Chalmers device to be used with qutip-qip"
+keywords = ["superconducting qubits", "pulse simulator", "quantum computing"]
+license = {file = "LICENSE.txt"}
+maintainers = [
+  {name = "Pontus Vikstål", email = "vikstal@chalmers.se"},
+]
+name = "chalmers_qubit"
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = "~=3.10"
+version = "2.1.1"
 
 [project.optional-dependencies]
-graphics = ["matplotlib"]
-dev = ["tox"]
 docs = [
   "mkdocs-material",
   "mkdocstrings[python]",
@@ -38,20 +39,28 @@ docs = [
   "mkdocs-jupyter",
   "black",
 ]
-full = [
-  "matplotlib",
-  "tox",
-  "mkdocs-material",
-  "mkdocstrings[python]",
-  "mkdocs-gen-files",
-  "mkdocs-literate-nav",
-  "mkdocs-bibtex",
-  "mkdocs-jupyter",
-  "black",
-]
 
+[project.urls]
+Documentation = "https://aqp-mc2-chalmers.github.io/chalmers-qubit/"
+Homepage = "https://github.com/aqp-mc2-chalmers/chalmers-qubit"
+Repository = "https://github.com/aqp-mc2-chalmers/chalmers-qubit.git"
+
+# Setuptools configuration to fix package discovery issues
 [tool.setuptools]
-zip-safe = false
+include-package-data = true
+packages = ["chalmers_qubit"]
 
-[tool.setuptools.packages.find]
-include = ["chalmers_qubit*"]
+# Tox configuration
+[tool.tox]
+env_list = ["py310"]
+isolated_build = true
+requires = ["tox>=4"]
+
+[tool.tox.env_run_base]
+commands = [
+  ["python", "-m", "unittest", "discover", "-s", "tests"],
+]
+deps = [
+  ".[docs]", # Install with docs dependencies for testing
+]
+description = "run unit tests"
