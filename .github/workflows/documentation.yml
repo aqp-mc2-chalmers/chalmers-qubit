@@ -28,4 +28,4 @@ jobs:
       - name: Install package with docs dependencies
         run: pip install '.[docs]'
       - name: Deploy to GitHub Pages
-        run: mkdocs gh-deploy --force --config-file docs/mkdocs.yml
+        run: mkdocs gh-deploy --force
