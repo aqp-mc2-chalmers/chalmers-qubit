@@ -1,7 +1,9 @@
-name: Deploy Documentation
+name: Build Documentation
 
 on:
   push:
+    branches: ["main"]
+  pull_request:
     branches: ["main"]
 
 permissions:
@@ -14,11 +16,6 @@ jobs:
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
-
-      - name: 🛠️ Configure Git credentials for GitHub Pages
-        run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
 
       - name: 💾 Cache pip dependencies
         uses: actions/cache@v4
@@ -36,5 +33,5 @@ jobs:
       - name: 📚 Install package with documentation extras
         run: pip install '.[docs]'
 
-      - name: 🚀 Deploy MkDocs to GitHub Pages
-        run: mkdocs gh-deploy --force
+      - name: 📦 Try to build MkDocs documentation
+        run: mkdocs build --strict
