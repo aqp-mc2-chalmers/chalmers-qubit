@@ -8,8 +8,8 @@ site_url: "https://aqp-mc2-chalmers.github.io/chalmers-qubit/"
 repo_url: "https://github.com/aqp-mc2-chalmers/chalmers-qubit"
 repo_name: "aqp-mc2-chalmers/chalmers-qubit"
 
-docs_dir: .  # Source directory for documentation files
-site_dir: "../site"  # Output directory for built site
+docs_dir: "docs"  # Source directory for documentation files
+site_dir: "site"  # Output directory for built site
 
 # Navigation structure - defines the sidebar menu and page organization
 nav:
@@ -75,14 +75,20 @@ theme:
 # Plugin configuration
 plugins:
   - search  # Enable search functionality
+
   - mkdocs-jupyter:
       execute: false
+      include: ["*.ipynb"] # Default: ["*.py", "*.ipynb"]
       include_requirejs: true
       custom_mathjax_url: "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS_CHTML-full,Safe"
 
+  # Bibliography support for citations
+  - bibtex:
+      bib_file: "docs/bibliography/references.bib"  # BibTeX file location
+
   - gen-files:
       scripts:
-        - scripts/gen_ref_pages.py  # or any other name or path
+        - docs/scripts/gen_ref_pages.py  # or any other name or path
 
   - literate-nav:
       nav_file: SUMMARY.md
@@ -92,7 +98,7 @@ plugins:
       default_handler: python  # Use Python handler for docstring parsing
       handlers:
         python:
-          paths: ["../chalmers_qubit"]  # Scan this directory for Python modules
+          paths: ["chalmers_qubit"]  # Scan this directory for Python modules
           # External inventory files for cross-references
           inventories:
             - https://docs.python.org/3/objects.inv          # Python standard library
@@ -118,10 +124,6 @@ plugins:
             signature_crossrefs: true        # Create links in signatures
             summary: true                    # Show summary line from docstrings
             unwrap_annotated: true           # Unwrap typing.Annotated types
-
-  # Bibliography support for citations
-  - bibtex:
-      bib_file: "bibliography/references.bib"  # BibTeX file location
 
 # Markdown extensions for enhanced functionality
 markdown_extensions:
