@@ -36,5 +36,8 @@ jobs:
       - name: 📚 Install package with documentation extras
         run: pip install '.[docs]'
 
+      - name: 📦 Try to build MkDocs documentation
+        run: mkdocs build --strict
+
       - name: 🚀 Deploy MkDocs to GitHub Pages
         run: mkdocs gh-deploy --force
