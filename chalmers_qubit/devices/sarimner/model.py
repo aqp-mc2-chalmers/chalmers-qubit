@@ -1,7 +1,7 @@
 import numpy as np
 from copy import deepcopy
 from typing import Optional, Union
-from qutip import destroy, tensor, basis
+from qutip import destroy, tensor, basis, Qobj
 from qutip_qip.device import Model
 
 __all__ = ["SarimnerModel"]
@@ -94,6 +94,9 @@ class SarimnerModel(Model):
         return new_dict
 
     def _set_up_drift(self):
+        """
+        Generate the drift Hamiltonian for the transmon qubits.
+        """
         drift = []
         for key, value in self.params["transmons"].items():
             destroy_op = destroy(self.dims[key])
@@ -123,9 +126,9 @@ class SarimnerModel(Model):
                 ket20 = tensor(basis(self.dims[key1],2), basis(self.dims[key2],0))
 
                 g = value # coupling strength
-                iswap_op = g * (ket01*ket10.dag() + ket10*ket01.dag())
-                cz_op_real = np.sqrt(2) * g * (ket11*ket20.dag() + ket20*ket11.dag())
-                cz_op_imag = 1j * np.sqrt(2) * g * (ket11*ket20.dag() - ket20*ket11.dag())
+                iswap_op = g * (ket01@ket10.dag() + ket10@ket01.dag())
+                cz_op_real = np.sqrt(2) * g * (ket11@ket20.dag() + ket20@ket11.dag())
+                cz_op_imag = 1j * np.sqrt(2) * g * (ket11@ket20.dag() - ket20@ket11.dag())
 
                 controls["iswap" + str(key1) + str(key2)] = (iswap_op, [key1, key2])
                 controls["cz_real" + str(key1) + str(key2)] = (cz_op_real, [key1, key2])
