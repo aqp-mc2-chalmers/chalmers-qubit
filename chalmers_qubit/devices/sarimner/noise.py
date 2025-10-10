@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Optional
 from qutip import destroy, num, tensor
-from qutip_qip.pulse import Pulse, Drift
+from qutip_qip.pulse import Pulse
 from qutip_qip.noise import Noise
 
 __all__ = ["DecoherenceNoise", "ZZCrossTalk"]

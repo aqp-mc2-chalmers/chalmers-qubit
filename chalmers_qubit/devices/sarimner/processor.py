@@ -121,7 +121,7 @@ class SarimnerProcessor(Processor):
             self.load_circuit(qc)
         return super().run_state(init_state, analytical, states, noisy, solver, **kwargs)
 
-    def run_propagator(self, qc: Optional[QubitCircuit] = None, noisy: bool = False, **kwargs):
+    def run_propagator(self, qc: Optional[QubitCircuit] = None, noisy: bool = False, **kwargs) -> Qobj | list[Qobj]:
         """
         Parameters
         ----------
@@ -143,12 +143,12 @@ class SarimnerProcessor(Processor):
         # construct qobjevo
         noisy_qobjevo, sys_c_ops = self.get_qobjevo(noisy=noisy)
         drift_qobjevo = self._get_drift_obj().get_ideal_qobjevo(self.dims)
-        H = QobjEvo.__add__(noisy_qobjevo, drift_qobjevo)
+        H = noisy_qobjevo + drift_qobjevo
 
         # add collpase operators into kwargs
         if "c_ops" in kwargs:
             if isinstance(kwargs["c_ops"], (Qobj, QobjEvo)):
-                kwargs["c_ops"] += [kwargs["c_ops"]] + sys_c_ops
+                kwargs["c_ops"] = [kwargs["c_ops"]] + sys_c_ops
             else:
                 kwargs["c_ops"] += sys_c_ops
         else:
@@ -276,7 +276,10 @@ class SarimnerProcessor(Processor):
         grids = gridspec.GridSpec(sum([len(d) for d in pulse_labels]), 1)
         grids.update(wspace=0.0, hspace=0.0)
 
-        tlist = np.linspace(0.0, self.get_full_tlist()[-1], num_steps)
+        full_tlist = self.get_full_tlist()
+        if full_tlist is None:
+            raise ValueError("tlist is None. Please load a circuit or set tlist before plotting pulses.")
+        tlist = np.linspace(0.0, full_tlist[-1], num_steps)
         dt = tlist[1] - tlist[0]
 
         # make sure coeffs start and end with zero, for ax.fill
